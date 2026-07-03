@@ -145,3 +145,34 @@ h1, h2, h3, h4, h5, h6 {
 .text-slate { color: var(--on-surface); }
 .text-slate-light { color: var(--on-surface-variant); }
 .text-amber { color: var(--primary); }
+
+/* Registration Role Switcher */
+.btn-check:checked + .btn-outline-primary {
+  background-color: var(--primary);
+  color: white;
+  border-color: var(--primary);
+  box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2);
+}
+.btn-outline-primary {
+  color: var(--on-surface-variant);
+  border-color: transparent;
+}
+.btn-outline-primary:hover {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: var(--primary);
+  border-color: transparent;
+}
+
+/* Input group styling fix for fundi-input */
+.input-group .fundi-input:focus {
+  border-color: var(--primary);
+  box-shadow: none;
+}
+.input-group:focus-within {
+  border-radius: var(--radius-sm);
+  box-shadow: 0 0 0 0.25rem rgba(245, 158, 11, 0.25);
+}
+.input-group:focus-within .input-group-text,
+.input-group:focus-within .fundi-input {
+  border-color: var(--primary);
+}
