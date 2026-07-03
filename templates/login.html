@@ -2,21 +2,21 @@
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-6 col-lg-5">
-        <div class="card shadow">
-            <div class="card-header bg-primary text-white">
-                <h4 class="mb-0"><i class="fas fa-sign-in-alt"></i> Login</h4>
+        <div class="fundi-card">
+            <div class="text-center mb-4">
+                <h4 class="mb-0 text-slate fw-bold"><i class="fas fa-sign-in-alt text-amber"></i> Login</h4>
             </div>
-            <div class="card-body">
+            <div class="card-body p-0">
                 <form method="POST">
                     <div class="mb-3">
-                        <label class="form-label">Phone Number</label>
-                        <input type="text" name="phone" class="form-control" placeholder="e.g., 254700000000" required>
+                        <label class="form-label text-slate fw-bold">Phone Number</label>
+                        <input type="text" name="phone" class="form-control fundi-input" placeholder="e.g., 254700000000" required>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Password</label>
-                        <input type="password" name="password" class="form-control" required>
+                    <div class="mb-4">
+                        <label class="form-label text-slate fw-bold">Password</label>
+                        <input type="password" name="password" class="form-control fundi-input" required>
                     </div>
-                    <button type="submit" class="btn btn-primary w-100">
+                    <button type="submit" class="btn-fundi-primary w-100">
                         <i class="fas fa-sign-in-alt"></i> Login
                     </button>
                 </form>

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="text-center py-4">
+    <h1 class="display-4 text-slate">Find a Verified Worker</h1>
+    <p class="lead text-slate-light">Connect with trusted plumbers, electricians, painters, and more.</p>
+</div>
+
+<div class="row">
+    {% for worker in workers %}
+    <div class="col-md-4 col-sm-6 mb-4">
+        <div class="fundi-card h-100">
+            <div class="card-body">
+                <h5 class="card-title text-slate mb-3">{{ worker.user.name }}</h5>
+                <p class="mb-2"><span class="fundi-chip">{{ worker.trade|capitalize }}</span></p>
+                <p class="text-slate-light small"><i class="fas fa-map-marker-alt"></i> {{ worker.location_area }}</p>
+                {% if worker.is_verified %}
+                <span class="fundi-badge-success mb-2"><i class="fas fa-check-circle"></i> Verified</span>
+                {% endif %}
+                <p class="mt-2 text-amber fw-bold"><i class="fas fa-star"></i> {{ worker.rating }} <span class="text-slate-light small fw-normal">({{ worker.total_jobs }} jobs)</span></p>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12 text-center">
+        <p class="text-muted">No verified workers yet. Check back soon!</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

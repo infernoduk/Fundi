@@ -54,6 +54,64 @@ def get_verified_workers():
     """Get all verified workers, sorted by rating."""
     return list(mongo.db.workers.find({"is_verified": True}).sort("rating", -1))
 
+def update_worker_verification(worker_id, is_verified):
+    """Update worker verification status."""
+    return mongo.db.workers.update_one(
+        {"_id": ObjectId(worker_id)},
+        {"$set": {"is_verified": is_verified}}
+    )
+
+def update_worker_rating(worker_id, rating):
+    """Update worker rating."""
+    return mongo.db.workers.update_one(
+        {"_id": ObjectId(worker_id)},
+        {"$set": {"rating": rating}}
+    )
+
+def increment_worker_jobs(worker_id):
+    """Increment the total jobs completed by a worker."""
+    return mongo.db.workers.update_one(
+        {"_id": ObjectId(worker_id)},
+        {"$inc": {"total_jobs": 1}}
+    )
+
+# -------- JOB HELPERS ---------
+def create_job_request(customer_id, trade, description, location_area, photo_url=None):
+    """Create a new job request."""
+    job = {
+        "customer_id": ObjectId(customer_id),
+        "trade": trade,
+        "description": description,
+        "location_area": location_area,
+        "photo_url": photo_url,
+        "status": "open", # open, quoted, booked, completed, cancelled
+        "created_at": datetime.utcnow()
+    }
+    return mongo.db.job_requests.insert_one(job)
+
+def find_job_by_id(job_id):
+    """Find a job by ObjectId."""
+    return mongo.db.job_requests.find_one({"_id": ObjectId(job_id)})
+
+def find_jobs_by_customer(customer_id):
+    """Find jobs posted by a customer."""
+    return list(mongo.db.job_requests.find({"customer_id": ObjectId(customer_id)}).sort("created_at", -1))
+
+def find_open_jobs_by_trade(trade):
+    """Find open jobs for a specific trade."""
+    return list(mongo.db.job_requests.find({"trade": trade, "status": "open"}).sort("created_at", -1))
+
+def update_job_status(job_id, status):
+    """Update job status."""
+    return mongo.db.job_requests.update_one(
+        {"_id": ObjectId(job_id)},
+        {"$set": {"status": status}}
+    )
+
+def delete_job(job_id):
+    """Delete a job."""
+    return mongo.db.job_requests.delete_one({"_id": ObjectId(job_id)})
+
 # ------QUOTE HELPERS----------
 def create_quote(job_request_id, worker_id, amount, message):
     """Create a new quote."""

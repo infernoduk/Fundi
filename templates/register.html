@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="fundi-card">
+            <div class="text-center mb-4">
+                <h4 class="mb-0 text-slate fw-bold"><i class="fas fa-user-plus text-amber"></i> Register</h4>
+            </div>
+            <div class="card-body p-0">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label text-slate fw-bold">Full Name</label>
+                        <input type="text" name="name" class="form-control fundi-input" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-slate fw-bold">Phone Number</label>
+                        <input type="text" name="phone" class="form-control fundi-input" placeholder="e.g., 254700000000" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-slate fw-bold">Password</label>
+                        <input type="password" name="password" class="form-control fundi-input" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label text-slate fw-bold">I am a...</label>
+                        <select name="role" class="form-select fundi-input" required>
+                            <option value="customer">Customer</option>
+                            <option value="worker">Worker</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-fundi-primary w-100">
+                        <i class="fas fa-user-plus"></i> Register
+                    </button>
+                </form>
+                <p class="mt-3 text-center">
+                    Already have an account? <a href="{{ url_for('login') }}">Login</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

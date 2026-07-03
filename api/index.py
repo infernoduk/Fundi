@@ -1,4 +1,9 @@
 import os
+import sys
+
+# Add project root to sys.path to allow imports from models, etc.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user, UserMixin
 from flask_pymongo import PyMongo
@@ -11,7 +16,7 @@ from bson import ObjectId
 # Load environment variables
 load_dotenv()
 
-app = Flask(__name__, static_folder='../public', static_url_path='')
+app = Flask(__name__, static_folder='../public', static_url_path='', template_folder='../templates')
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
 app.config['MONGO_URI'] = os.environ.get('MONGO_URI', 'mongodb://localhost:27017/fundi')
 
@@ -48,12 +53,19 @@ class User(UserMixin):
 #Check if user is admin
     def is_admin(self):
         return self.role == 'admin'
+
+@login_manager.user_loader
+def load_user(user_id):
+    user_data = find_user_by_id(user_id)
+    if user_data:
+        return User(user_data)
+    return None
 #Create admin user at startup
 with app.app_context():
     admin = mongo.db.users.find_one({"phone": "254700000000"})
     if not admin:
         create_user("254700000000", "Admin", "admin123", "admin")
-        print("✅ Admin user created: phone=254700000000, password=admin123")
+        print("Admin user created: phone=254700000000, password=admin123")
 
 # ---------- PUBLIC ROUTES ----------
 
