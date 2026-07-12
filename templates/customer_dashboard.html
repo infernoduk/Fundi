@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Customer Dashboard</h2>
+<div class="card">
+    <div class="card-body">
+        <p>Welcome, {{ current_user.name }}!</p>
+        <p class="text-muted">More features coming soon (Week 8-9)...</p>
+        <ul>
+            <li>Post a job (Week 8)</li>
+            <li>View quotes (Week 9)</li>
+            <li>Accept/reject quotes (Week 10)</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

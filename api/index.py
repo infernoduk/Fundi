@@ -33,7 +33,7 @@ login_manager.login_view = 'login'
 from models import (
     create_user, find_user_by_phone, find_user_by_id,
     create_worker, find_worker_by_user_id, find_worker_by_id,
-    get_verified_workers, update_worker_verification,
+    get_verified_workers, search_verified_workers, update_worker_verification,
     update_worker_rating, increment_worker_jobs,
     create_job_request, find_job_by_id, find_jobs_by_customer,
     find_open_jobs_by_trade, update_job_status, delete_job,
@@ -71,17 +71,43 @@ with app.app_context():
 
 @app.route('/')
 def index():
-    """Home page - show verified workers"""
-    workers = get_verified_workers()
+    """Home page - show verified workers or worker dashboard feed"""
+    # 1. Handle Worker Personalized Feed
+    if current_user.is_authenticated and current_user.role == 'worker':
+        worker_profile = find_worker_by_user_id(current_user.id)
+        if worker_profile:
+            # Fetch available jobs for their trade
+            jobs = find_open_jobs_by_trade(worker_profile.get('trade'))
+            
+            # Enrich jobs with customer data
+            for job in jobs:
+                customer = mongo.db.users.find_one({"_id": job['customer_id']})
+                job['customer'] = customer
+                
+            return render_template('index.html', 
+                                   is_worker_view=True, 
+                                   worker_profile=worker_profile, 
+                                   jobs=jobs)
+                                   
+    # 2. Handle Public/Customer View with Search
+    search_query = request.args.get('q')
+    if search_query:
+        workers = search_verified_workers(search_query)
+    else:
+        workers = get_verified_workers()
+        
     # Enrich workers with user data
     for worker in workers:
         user = mongo.db.users.find_one({"_id": worker['user_id']})
         worker['user'] = user
-    return render_template('index.html', workers=workers)
+        
+    return render_template('index.html', 
+                           is_worker_view=False, 
+                           workers=workers,
+                           search_query=search_query)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    """User registration"""
     if request.method == 'POST':
         name = request.form.get('name')
         phone = request.form.get('phone')
@@ -96,43 +122,40 @@ def register():
             flash('Phone number already registered')
             return redirect(url_for('register'))
         
+        # Create user
         user_id = create_user(phone, name, password, role)
         
-        flash('Registration successful! Please log in.')
+        # If worker, create worker profile with trade + location
         if role == 'worker':
-            return redirect(url_for('complete_worker_profile', user_id=str(user_id.inserted_id)))
+            trade = request.form.get('trade')
+            location_area = request.form.get('location_area')
+            
+            if not trade or not location_area:
+                flash('Trade and location are required for workers')
+                return redirect(url_for('register'))
+            
+            create_worker(str(user_id.inserted_id), trade, location_area, False)
+        
+        # Log the user in
+        user_data = mongo.db.users.find_one({"_id": user_id.inserted_id})
+        login_user(User(user_data))
+        
+        if role == 'worker':
+            flash('Registration successful! Please verify your identity.')
+            return redirect(url_for('verify_identity', user_id=str(user_id.inserted_id)))
         else:
-            user_data = mongo.db.users.find_one({"_id": user_id.inserted_id})
-            login_user(User(user_data))
             flash('Welcome to Fundi!')
             return redirect(url_for('index'))
     
     return render_template('register.html')
 
-@app.route('/complete_worker_profile/<user_id>', methods=['GET', 'POST'])
-def complete_worker_profile(user_id):
-    """Complete worker profile(tradeu, location)"""
-    user = mongo.db.users.find_one({"_id": ObjectId(user_id)})
-    if not user:
-        flash('User not found')
-        return redirect(url_for('register'))
-    
-    if request.method == 'POST':
-        trade = request.form.get('trade')
-        location_area = request.form.get('location_area')
-        
-        if not trade or not location_area:
-            flash('All fields are required')
-            return redirect(request.url)
-        
-        create_worker(user_id, trade, location_area, False)
-        flash('Worker profile created! Please verify your identity.')
-        return redirect(url_for('verification', user_id=user_id))
-    
-    return render_template('worker_profile_complete.html', user=user)
+@app.route('/verification/<user_id>')
+def old_verification_redirect(user_id):
+    # Redirect aggressively-cached browsers to the new route
+    return redirect(url_for('verify_identity', user_id=user_id))
 
-@app.route('/verification/<user_id>', methods=['GET', 'POST'])
-def verification(user_id):
+@app.route('/verify-identity/<user_id>', methods=['GET', 'POST'])
+def verify_identity(user_id):
     """Verify worker identity"""
     if current_user.id != user_id:
         flash('Unauthorized')
@@ -141,9 +164,17 @@ def verification(user_id):
     if request.method == 'POST':
         id_file = request.files.get('id_image')
         selfie_file = request.files.get('selfie')
-        
-        if not id_file or not selfie_file:
-            flash('Please upload both ID photo and selfie')
+        if not selfie_file or selfie_file.filename == '':
+            selfie_file = request.files.get('selfie_upload')
+            
+        selfie_base64 = request.form.get('selfie_base64')
+            
+        if not id_file or id_file.filename == '':
+            flash('Please upload your ID photo')
+            return redirect(request.url)
+            
+        if (not selfie_file or selfie_file.filename == '') and not selfie_base64:
+            flash('Please upload your selfie')
             return redirect(request.url)
         
         # Save files locally for verification
@@ -151,14 +182,34 @@ def verification(user_id):
         id_path = os.path.join('uploads', f'id_{user_id}_{uuid.uuid4().hex[:8]}.jpg')
         selfie_path = os.path.join('uploads', f'selfie_{user_id}_{uuid.uuid4().hex[:8]}.jpg')
         id_file.save(id_path)
-        selfie_file.save(selfie_path)
-        #Run verification (placeholder - will be implemented in Week 10)
-        # For now, always pass
-        result = {'verified': True}
+        
+        if selfie_file and selfie_file.filename != '':
+            selfie_file.save(selfie_path)
+        elif selfie_base64:
+            import base64
+            # Handle the "data:image/jpeg;base64,..." prefix
+            if ',' in selfie_base64:
+                header, encoded = selfie_base64.split(',', 1)
+            else:
+                encoded = selfie_base64
+            with open(selfie_path, 'wb') as f:
+                f.write(base64.b64decode(encoded))
+        # Run verification using OCR and Mock Database
+        from verification import verify_worker
+        result = verify_worker(id_path, selfie_path)
+        
         #Update worker 
         worker = find_worker_by_user_id(user_id)
         if worker:
             update_worker_verification(worker['_id'], result['verified'])
+            
+            # Upload images to Cloudinary
+            from cloudinary_uploader import upload_image
+            selfie_url = upload_image(selfie_path, folder_name=f"fundi/workers/{worker['_id']}/selfie")
+            id_url = upload_image(id_path, folder_name=f"fundi/workers/{worker['_id']}/id")
+            
+            from models import update_worker_images
+            update_worker_images(worker['_id'], selfie_url, id_url)
         
         # Clean up local files
         try:
@@ -170,7 +221,9 @@ def verification(user_id):
         if result['verified']:
             flash('✅ Verification passed! You are now a verified Fundi worker.')
         else:
-            flash('❌ Verification failed. Please try again with clearer images.')
+            error_msg = result.get('error', 'Please ensure your ID photo is clear and readable.')
+            flash(f'❌ Verification failed: {error_msg}')
+            return redirect(request.url)
         
         if current_user.role == 'worker':
             return redirect(url_for('worker_dashboard'))
@@ -224,8 +277,8 @@ def worker_dashboard():
     
     worker = find_worker_by_user_id(current_user.id)
     if not worker:
-        flash('Complete your worker profile first')
-        return redirect(url_for('complete_worker_profile', user_id=current_user.id))
+        flash('Worker profile not found. Please contact support.')
+        return redirect(url_for('index'))
     
     return render_template('worker_dashboard.html', worker=worker)
 @app.route('/customer/dashboard')

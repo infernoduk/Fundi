@@ -54,12 +54,39 @@ def get_verified_workers():
     """Get all verified workers, sorted by rating."""
     return list(mongo.db.workers.find({"is_verified": True}).sort("rating", -1))
 
+def search_verified_workers(query):
+    """Get verified workers matching a query in trade or location."""
+    import re
+    regex = re.compile(f".*{query}.*", re.IGNORECASE)
+    return list(mongo.db.workers.find({
+        "is_verified": True,
+        "$or": [
+            {"trade": {"$regex": regex}},
+            {"location_area": {"$regex": regex}}
+        ]
+    }).sort("rating", -1))
+
 def update_worker_verification(worker_id, is_verified):
     """Update worker verification status."""
     return mongo.db.workers.update_one(
         {"_id": ObjectId(worker_id)},
         {"$set": {"is_verified": is_verified}}
     )
+
+def update_worker_images(worker_id, selfie_url=None, id_url=None):
+    """Update worker profile with uploaded image URLs."""
+    update_data = {}
+    if selfie_url:
+        update_data["selfie_url"] = selfie_url
+    if id_url:
+        update_data["id_url"] = id_url
+        
+    if update_data:
+        return mongo.db.workers.update_one(
+            {"_id": ObjectId(worker_id)},
+            {"$set": update_data}
+        )
+    return None
 
 def update_worker_rating(worker_id, rating):
     """Update worker rating."""

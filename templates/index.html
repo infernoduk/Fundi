@@ -1,29 +1,297 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="text-center py-4">
-    <h1 class="display-4 text-slate">Find a Verified Worker</h1>
-    <p class="lead text-slate-light">Connect with trusted plumbers, electricians, painters, and more.</p>
-</div>
 
-<div class="row">
-    {% for worker in workers %}
-    <div class="col-md-4 col-sm-6 mb-4">
-        <div class="fundi-card h-100">
-            <div class="card-body">
-                <h5 class="card-title text-slate mb-3">{{ worker.user.name }}</h5>
-                <p class="mb-2"><span class="fundi-chip">{{ worker.trade|capitalize }}</span></p>
-                <p class="text-slate-light small"><i class="fas fa-map-marker-alt"></i> {{ worker.location_area }}</p>
-                {% if worker.is_verified %}
-                <span class="fundi-badge-success mb-2"><i class="fas fa-check-circle"></i> Verified</span>
+{% if is_worker_view %}
+<!-- ============================================== -->
+<!-- WORKER PERSONALIZED FEED                       -->
+<!-- ============================================== -->
+<div class="row py-4">
+    <div class="col-lg-8">
+        <h2 class="display-5 fw-bold text-slate mb-2">Ready to work, <span class="text-secondary">{{ current_user.name.split()[0] }}</span>?</h2>
+        <p class="lead text-slate-light mb-4">Here are the latest jobs matching your trade in your area.</p>
+        
+        <!-- Worker Quick Stats -->
+        <div class="d-flex align-items-center mb-4 gap-4 bg-white p-3 rounded-4 shadow-sm" style="border: 1px solid var(--outline);">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; border: 2px solid var(--primary); overflow: hidden;">
+                    {% if worker_profile.selfie_url %}
+                    <img src="{{ worker_profile.selfie_url }}" alt="Profile" class="w-100 h-100" style="object-fit: cover;">
+                    {% else %}
+                    <i class="fas fa-user text-slate fs-4"></i>
+                    {% endif %}
+                </div>
+                <div>
+                    <h6 class="mb-0 fw-bold text-slate">{{ worker_profile.trade|capitalize }}</h6>
+                    <small class="text-slate-light"><i class="fas fa-map-marker-alt text-danger me-1"></i> {{ worker_profile.location_area }}</small>
+                </div>
+            </div>
+            <div class="border-start ps-4">
+                <h6 class="mb-0 fw-bold text-slate"><i class="fas fa-star text-amber me-1"></i> {{ worker_profile.rating }}</h6>
+                <small class="text-slate-light">{{ worker_profile.total_jobs }} jobs</small>
+            </div>
+            <div class="border-start ps-4">
+                {% if worker_profile.is_verified %}
+                <span class="fundi-badge-success mb-0"><i class="fas fa-check-circle"></i> Verified</span>
+                {% else %}
+                <span class="badge bg-secondary mb-0"><i class="fas fa-clock"></i> Pending</span>
                 {% endif %}
-                <p class="mt-2 text-amber fw-bold"><i class="fas fa-star"></i> {{ worker.rating }} <span class="text-slate-light small fw-normal">({{ worker.total_jobs }} jobs)</span></p>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="fw-bold text-slate mb-0">Available Jobs</h4>
+            <span class="badge bg-light text-secondary border rounded-pill">{{ jobs|length }} Found</span>
+        </div>
+        
+        <!-- Job Board Feed -->
+        {% for job in jobs %}
+        <div class="fundi-card mb-3 position-relative overflow-hidden" style="border-left: 4px solid var(--secondary);">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h5 class="fw-bold text-slate mb-1">{{ job.trade|capitalize }} Needed</h5>
+                        <p class="text-slate-light mb-2"><i class="fas fa-map-marker-alt text-danger me-1"></i> {{ job.location_area }}</p>
+                    </div>
+                    <span class="badge bg-light text-secondary border px-3 py-2 rounded-pill">Open</span>
+                </div>
+                
+                <p class="text-slate mt-2 mb-3 bg-light p-3 rounded border" style="border-color: var(--outline) !important;">{{ job.description }}</p>
+                
+                <div class="d-flex justify-content-between align-items-center border-top pt-3 mt-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                            <i class="fas fa-user-circle fs-5"></i>
+                        </div>
+                        <span class="text-slate fw-bold small">{{ job.customer.name if job.customer else 'Customer' }}</span>
+                    </div>
+                    <a href="#" class="btn btn-fundi-primary px-4"><i class="fas fa-paper-plane me-2"></i> Send Quote</a>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="text-center py-5 bg-white rounded-4 shadow-sm" style="border: 1px dashed var(--outline);">
+            <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center mb-3 shadow-sm" style="width: 80px; height: 80px;">
+                <i class="fas fa-clipboard-list fs-1 text-slate-light"></i>
+            </div>
+            <h5 class="text-slate fw-bold">No jobs available right now</h5>
+            <p class="text-muted mb-0">Check back later for new requests in your area.</p>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Sidebar for tips -->
+        <div class="fundi-card bg-light border-0 shadow-sm sticky-top mt-4 mt-lg-0" style="top: 100px;">
+            <div class="card-body p-4">
+                <h5 class="fw-bold text-slate mb-3"><i class="fas fa-lightbulb text-amber me-2"></i> Pro Tips</h5>
+                <ul class="list-unstyled mb-0 text-slate-light small">
+                    <li class="mb-4">
+                        <strong class="text-slate d-block mb-1">Respond quickly</strong>
+                        Customers are 3x more likely to hire the first worker who sends a quote.
+                    </li>
+                    <li class="mb-4">
+                        <strong class="text-slate d-block mb-1">Be professional</strong>
+                        A detailed quote with clear pricing builds trust immediately.
+                    </li>
+                    <li>
+                        <strong class="text-slate d-block mb-1">Your Profile Photo</strong>
+                        Workers with clear profile pictures get hired 50% more often.
+                    </li>
+                </ul>
             </div>
         </div>
     </div>
-    {% else %}
-    <div class="col-12 text-center">
-        <p class="text-muted">No verified workers yet. Check back soon!</p>
-    </div>
-    {% endfor %}
 </div>
+
+{% else %}
+<!-- ============================================== -->
+<!-- PUBLIC / CUSTOMER VIEW                         -->
+<!-- ============================================== -->
+<!-- Hero Section -->
+<div class="row align-items-center py-5 mb-5">
+    <div class="col-lg-6 mb-4 mb-lg-0">
+        <h1 class="display-4 fw-bold text-slate mb-3">Professional Services,<br>Verified by <span
+                class="text-amber">Fundi</span>.</h1>
+        <p class="lead text-slate-light mb-4">The easiest way to hire trusted plumbers, electricians, carpenters, and
+            more in your local area. All workers are identity-verified for your safety.</p>
+
+        <!-- Search Bar Form -->
+        <form action="{{ url_for('index') }}" method="GET" class="mb-4">
+            <div class="input-group input-group-lg shadow-sm rounded-3">
+                <span class="input-group-text bg-white border-end-0 text-secondary"><i class="fas fa-search"></i></span>
+                <input type="text" name="q" class="form-control border-start-0" placeholder="What service do you need? (e.g. Plumber)" value="{{ search_query or '' }}" style="box-shadow: none; border-color: #dee2e6;">
+                <button type="submit" class="btn btn-fundi-primary px-4 fw-bold">Search</button>
+            </div>
+        </form>
+
+        <!-- Trust Indicators -->
+        <div class="d-flex align-items-center mt-4 gap-4">
+            <div class="d-flex align-items-center gap-2">
+                <i class="fas fa-shield-alt fs-4" style="color: var(--secondary);"></i>
+                <span class="text-slate fw-bold">ID Verified</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <i class="fas fa-star fs-4 text-amber"></i>
+                <span class="text-slate fw-bold">Top Rated</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <i class="fas fa-bolt fs-4 text-warning"></i>
+                <span class="text-slate fw-bold">Fast Booking</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 position-relative">
+        <div class="fundi-card border-0 bg-white shadow-lg position-relative z-index-1 mx-auto"
+            style="max-width: 400px; overflow: hidden; z-index: 2;">
+            <div class="bg-light p-4 text-center" style="border-bottom: 4px solid var(--primary);">
+                <div class="rounded-circle bg-white d-inline-flex align-items-center justify-content-center mb-3 shadow-sm"
+                    style="width: 80px; height: 80px;">
+                    <i class="fas fa-tools fs-1" style="color: var(--secondary);"></i>
+                </div>
+                <h4 class="text-slate fw-bold">Instant Connections</h4>
+                <p class="text-slate-light small mb-0">Browse through hundreds of vetted professionals ready to help you
+                    today.</p>
+            </div>
+            <div class="p-3 bg-white">
+                <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+                    <span class="text-slate fw-bold"><i class="fas fa-wrench text-slate-light me-2"></i> Plumber</span>
+                    <span class="fundi-badge-success"><i class="fas fa-check"></i> Available</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+                    <span class="text-slate fw-bold"><i class="fas fa-bolt text-slate-light me-2"></i>
+                        Electrician</span>
+                    <span class="fundi-badge-success"><i class="fas fa-check"></i> Available</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center pb-1">
+                    <span class="text-slate fw-bold"><i class="fas fa-paint-roller text-slate-light me-2"></i>
+                        Painter</span>
+                    <span class="fundi-badge-success"><i class="fas fa-check"></i> Available</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Decorative blobs -->
+        <div class="position-absolute rounded-circle"
+            style="width: 300px; height: 300px; background-color: var(--primary); opacity: 0.1; top: -20px; right: 0; z-index: 1; filter: blur(40px);">
+        </div>
+        <div class="position-absolute rounded-circle"
+            style="width: 250px; height: 250px; background-color: var(--secondary); opacity: 0.1; bottom: -30px; left: 20px; z-index: 1; filter: blur(40px);">
+        </div>
+    </div>
+</div>
+
+<!-- Featured Workers Section -->
+<div class="py-5" id="workers-section">
+    <div class="d-flex justify-content-between align-items-end mb-4">
+        <div>
+            <h2 class="fw-bold text-slate">{% if search_query %}Search Results for "{{ search_query }}"{% else %}Featured Workers{% endif %}</h2>
+            <p class="text-slate-light mb-0">{% if search_query %}{{ workers|length }} professionals found.{% else %}Top-rated professionals ready to hire{% endif %}</p>
+        </div>
+        {% if search_query %}
+        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary btn-sm">Clear Search</a>
+        {% endif %}
+    </div>
+
+    <div class="row">
+        {% for worker in workers %}
+        <div class="col-md-4 col-sm-6 mb-4">
+            <div class="fundi-card h-100 position-relative overflow-hidden">
+                <!-- Top Accent Line -->
+                <div class="position-absolute top-0 start-0 w-100"
+                    style="height: 4px; background-color: var(--secondary);"></div>
+
+                <div class="card-body pt-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="rounded-circle bg-light d-flex align-items-center justify-content-center shadow-sm"
+                                style="width: 60px; height: 60px; overflow: hidden; border: 2px solid white;">
+                                {% if worker.selfie_url %}
+                                <img src="{{ worker.selfie_url }}" alt="Profile Photo"
+                                    style="width: 100%; height: 100%; object-fit: cover;">
+                                {% else %}
+                                <i class="fas fa-user text-slate-light fs-4"></i>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <h5 class="card-title text-slate mb-0 fw-bold">{{ worker.user.name }}</h5>
+                                <p class="mb-0 mt-1"><span class="fundi-chip">{{ worker.trade|capitalize }}</span></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+                        <div>
+                            {% if worker.is_verified %}
+                            <span class="fundi-badge-success mb-1 d-block" style="width: fit-content;"><i
+                                    class="fas fa-check-circle"></i> Verified</span>
+                            {% endif %}
+                            <p class="text-slate-light small mb-0"><i
+                                    class="fas fa-map-marker-alt text-danger me-1"></i> {{ worker.location_area }}</p>
+                        </div>
+                        <div class="text-end">
+                            <p class="mb-0 text-amber fw-bold fs-5"><i class="fas fa-star"></i> {{ worker.rating }}</p>
+                            <span class="text-slate-light small">({{ worker.total_jobs }} jobs)</span>
+                        </div>
+                    </div>
+
+                    <a href="{{ url_for('login') }}" class="btn btn-fundi-primary w-100 mt-4 py-2"><i
+                            class="fas fa-envelope me-2"></i> Contact Worker</a>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12 text-center py-5">
+            <div class="rounded-circle bg-white d-inline-flex align-items-center justify-content-center mb-3 shadow-sm"
+                style="width: 80px; height: 80px;">
+                <i class="fas fa-search fs-1 text-slate-light"></i>
+            </div>
+            <h4 class="text-slate fw-bold">No workers found</h4>
+            <p class="text-muted">{% if search_query %}We couldn't find any verified professionals matching "{{ search_query }}". Try searching for a different trade or location.{% else %}There are no verified workers available at the moment. Check back soon!{% endif %}</p>
+            {% if search_query %}
+            <a href="{{ url_for('index') }}" class="btn btn-outline-primary mt-3">View All Workers</a>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- How it Works Section -->
+<div class="py-5 mb-5 rounded-4 shadow-sm" style="background-color: var(--surface); border: 1px solid var(--outline);">
+    <div class="text-center mb-5 pt-4">
+        <h2 class="fw-bold text-slate">How Fundi Works</h2>
+        <p class="text-slate-light">A simple, secure way to get your jobs done</p>
+    </div>
+
+    <div class="row px-4 pb-4 text-center">
+        <div class="col-md-4 mb-4 mb-md-0">
+            <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                style="width: 70px; height: 70px; background-color: rgba(245, 158, 11, 0.1); color: var(--primary);">
+                <i class="fas fa-search fs-3"></i>
+            </div>
+            <h5 class="fw-bold text-slate">1. Find a Pro</h5>
+            <p class="text-slate-light small px-3">Browse our directory of fully verified, background-checked
+                professionals in your area.</p>
+        </div>
+        <div class="col-md-4 mb-4 mb-md-0">
+            <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                style="width: 70px; height: 70px; background-color: rgba(15, 118, 110, 0.1); color: var(--secondary);">
+                <i class="fas fa-comments fs-3"></i>
+            </div>
+            <h5 class="fw-bold text-slate">2. Agree on Price</h5>
+            <p class="text-slate-light small px-3">Contact the worker directly, discuss your requirements, and agree on
+                a fair price upfront.</p>
+        </div>
+        <div class="col-md-4">
+            <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                style="width: 70px; height: 70px; background-color: rgba(22, 101, 52, 0.1); color: var(--success-text);">
+                <i class="fas fa-shield-alt fs-3"></i>
+            </div>
+            <h5 class="fw-bold text-slate">3. Safe & Secure</h5>
+            <p class="text-slate-light small px-3">Enjoy peace of mind knowing you're working with verified talent from
+                your community.</p>
+        </div>
+    </div>
+</div>
+{% endif %}
 {% endblock %}
