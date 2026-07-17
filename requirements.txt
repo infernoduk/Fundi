@@ -17,9 +17,6 @@ email-validator==2.0.0
 pytesseract==0.3.10
 Pillow==12.0.0
 
-# Facial Recognition
-deepface==0.0.79
-opencv-python==4.8.1.78
 
 # HTTP Requests (for M-Pesa API)
 requests==2.31.0
