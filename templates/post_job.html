@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Post a Job{% endblock %}
+{% block content %}
+<div class="container py-4 pb-5" style="max-width: 800px;">
+    <div class="mb-4">
+        <h1 class="fw-bold mb-1" style="font-size: 2rem; letter-spacing: -0.02em;">Describe Your Project</h1>
+        <p class="text-slate-light">Provide details to connect with the best local professionals.</p>
+    </div>
+
+    <!-- Bento-style Form Layout -->
+    <form method="POST" action="{{ url_for('post_job') }}" class="row g-4" id="postJobForm">
+
+        <!-- Core Details Card -->
+        <div class="col-12">
+            <div class="fundi-card p-4">
+                <h2 class="fs-5 fw-bold text-slate mb-4 pb-2 border-bottom">Job Essentials</h2>
+
+                <div class="mb-4">
+                    <label for="trade" class="form-label text-slate-light fw-bold small mb-1">Trade / Category</label>
+                    <select class="form-select fundi-input" id="trade" name="trade" required>
+                        <option value="" disabled selected>Select a trade...</option>
+                        <option value="Plumbing">Plumbing</option>
+                        <option value="Electrical">Electrical</option>
+                        <option value="Carpentry">Carpentry</option>
+                        <option value="Painting">Painting</option>
+                        <option value="Cleaning">Cleaning</option>
+                        <option value="Gardening">Gardening</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div class="mb-2">
+                    <label for="description" class="form-label text-slate-light fw-bold small mb-1">Job
+                        Description</label>
+                    <textarea class="form-control fundi-input" id="description" name="description" rows="5"
+                        placeholder="Describe what needs to be done. Be as specific as possible regarding materials or current state..."
+                        required></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Location Details Card -->
+        <div class="col-md-6">
+            <div class="fundi-card h-100 p-4">
+                <h2 class="fs-5 fw-bold text-slate mb-4 pb-2 border-bottom">Location</h2>
+
+                <div class="mb-4">
+                    <label for="area" class="form-label text-slate-light fw-bold small mb-1">Public Area / Neighborhood
+                        <i class="fas fa-info-circle text-muted ms-1" title="Visible to all workers."></i></label>
+                    <input type="text" class="form-control fundi-input" id="area" name="area"
+                        placeholder="e.g., Downtown, Westside" required>
+                </div>
+
+                <div class="mb-2">
+                    <label for="full_address" class="form-label text-slate-light fw-bold small mb-1">Private Exact
+                        Address <i class="fas fa-info-circle text-muted ms-1"
+                            title="Only shared with the hired worker."></i></label>
+                    <input type="text" class="form-control fundi-input" id="full_address" name="full_address"
+                        placeholder="e.g., 123 Main St, Apt 4B" required>
+                </div>
+            </div>
+        </div>
+
+        <!-- Logistics Card -->
+        <div class="col-md-6">
+            <div class="fundi-card h-100 p-4">
+                <h2 class="fs-5 fw-bold text-slate mb-4 pb-2 border-bottom">Logistics</h2>
+
+                <div class="mb-4">
+                    <label for="preferredDate" class="form-label text-slate-light fw-bold small mb-1">Preferred Date
+                        (Optional)</label>
+                    <input type="date" class="form-control fundi-input" id="preferredDate" name="preferred_date">
+                </div>
+
+                <div class="mb-2">
+                    <label class="form-label text-slate-light fw-bold small mb-1">Estimated Budget (Optional)</label>
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0 text-muted">Ksh</span>
+                            <input type="number" class="form-control fundi-input border-start-0 ps-0" id="budgetMin"
+                                placeholder="Min" name="budget_min">
+                        </div>
+                        <span class="text-muted">-</span>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0 text-muted">Ksh</span>
+                            <input type="number" class="form-control fundi-input border-start-0 ps-0" id="budgetMax"
+                                placeholder="Max" name="budget_max">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Area -->
+        <div class="col-12 mt-4 d-flex justify-content-end">
+            <button type="submit"
+                class="btn btn-fundi-primary py-3 px-5 fw-bold d-inline-flex align-items-center justify-content-center">
+                <i class="fas fa-paper-plane me-2"></i> Post Job
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

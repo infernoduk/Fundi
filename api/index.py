@@ -280,6 +280,10 @@ def worker_dashboard():
         flash('Worker profile not found. Please contact support.')
         return redirect(url_for('index'))
     
+    # Get open jobs for this worker's trade
+    open_jobs = find_open_jobs_by_trade(current_user.trade)
+    
+    
     return render_template('worker_dashboard.html', worker=worker)
 @app.route('/customer/dashboard')
 @login_required
@@ -299,6 +303,34 @@ def admin_dashboard():
         return redirect(url_for('index'))
     
     return render_template('admin_dashboard.html')
+@app.route('/post_job', methods=['GET', 'POST'])
+@login_required
+def post_job():
+    if current_user.role != 'customer':
+        flash('Only customers can post jobs')
+        return redirect(url_for('dashboard'))
+    
+    if request.method == 'POST':
+        trade = request.form.get('trade')
+        description = request.form.get('description')
+        area = request.form.get('area')
+        full_address = request.form.get('full_address')
+        
+        if not all([trade, description, area, full_address]):
+            flash('All fields are required.', 'danger')
+            return render_template('post_job.html')
+        
+        job_id = create_job_request(
+            customer_id=current_user.id,
+            trade=trade,
+            description=description,
+            location_area=area,
+            full_address=full_address
+        )
+        flash('Job posted successfully!', 'success')
+        return redirect(url_for('customer_dashboard'))
+    
+    return render_template('post_job.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
