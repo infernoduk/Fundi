@@ -28,4 +28,5 @@ cloudinary==1.45.0
 # PDF Generation
 reportlab==4.0.4
 cryptography
-
+# WSGI server for production
+gunicorn==21.2.0

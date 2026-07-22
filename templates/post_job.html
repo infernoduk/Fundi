@@ -8,7 +8,8 @@
     </div>
 
     <!-- Bento-style Form Layout -->
-    <form method="POST" action="{{ url_for('post_job') }}" class="row g-4" id="postJobForm">
+    <form method="POST" action="{{ url_for('post_job') }}" enctype="multipart/form-data" class="row g-4"
+        id="postJobForm">
 
         <!-- Core Details Card -->
         <div class="col-12">
@@ -19,22 +20,47 @@
                     <label for="trade" class="form-label text-slate-light fw-bold small mb-1">Trade / Category</label>
                     <select class="form-select fundi-input" id="trade" name="trade" required>
                         <option value="" disabled selected>Select a trade...</option>
-                        <option value="Plumbing">Plumbing</option>
-                        <option value="Electrical">Electrical</option>
-                        <option value="Carpentry">Carpentry</option>
-                        <option value="Painting">Painting</option>
-                        <option value="Cleaning">Cleaning</option>
-                        <option value="Gardening">Gardening</option>
-                        <option value="Other">Other</option>
+                        <option value="plumbing">Plumbing</option>
+                        <option value="electrical">Electrical</option>
+                        <option value="carpentry">Carpentry</option>
+                        <option value="painting">Painting</option>
+                        <option value="cleaning">Cleaning</option>
+                        <option value="gardening">Gardening</option>
+                        <option value="other">Other</option>
                     </select>
                 </div>
 
-                <div class="mb-2">
+                <div class="mb-3">
                     <label for="description" class="form-label text-slate-light fw-bold small mb-1">Job
                         Description</label>
                     <textarea class="form-control fundi-input" id="description" name="description" rows="5"
                         placeholder="Describe what needs to be done. Be as specific as possible regarding materials or current state..."
                         required></textarea>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- PHOTO UPLOAD – Using external JS for preview                   -->
+                <!-- ============================================================ -->
+                <div class="mb-2">
+                    <label class="form-label text-slate-light fw-bold small mb-1">
+                        Photo of the Problem <span class="text-muted">(optional)</span>
+                        <i class="fas fa-info-circle text-muted ms-1"
+                            title="Upload a photo so workers can see the issue before quoting."></i>
+                    </label>
+                    <div class="d-flex align-items-center gap-3">
+                        <input type="file" class="form-control fundi-input" id="photo" name="photo" accept="image/*">
+                        <small class="text-muted" style="white-space: nowrap;">Max 5MB</small>
+                    </div>
+                    <!-- Image Preview Container -->
+                    <div id="photo_preview_container" class="mt-2" style="display: none;">
+                        <img id="photo_preview" src="#" alt="Preview" class="img-fluid rounded"
+                            style="max-height: 150px; border: 2px solid #22C55E;">
+                        <button type="button" class="btn btn-sm btn-outline-danger ms-2"
+                            onclick="clearImage('photo', 'photo_preview_container', 'photo_preview')">
+                            <i class="fas fa-times"></i> Remove
+                        </button>
+                    </div>
+                    <small class="text-muted d-block mt-1">Upload a photo so workers can see the issue.</small>
                 </div>
             </div>
         </div>
@@ -100,4 +126,19 @@
         </div>
     </form>
 </div>
+
+<!-- ============================================================ -->
+<!-- JavaScript - Using external functions from main.js           -->
+<!-- ============================================================ -->
+<script>
+    // Add event listener for the photo input using external functions
+    document.addEventListener('DOMContentLoaded', function () {
+        const photoInput = document.getElementById('photo');
+        if (photoInput) {
+            photoInput.addEventListener('change', function (e) {
+                previewImage(e, 'photo', 'photo_preview_container', 'photo_preview');
+            });
+        }
+    });
+</script>
 {% endblock %}

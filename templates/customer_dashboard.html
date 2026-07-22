@@ -1,14 +1,177 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Customer Dashboard</h2>
-<div class="card">
-    <div class="card-body">
-        <p>Welcome, {{ current_user.name }}!</p>
-        <p class="text-muted">More features coming soon...</p>
-        <ul>
-            <li>View quotes</li>
-            <li>Accept/reject quotes</li>
-        </ul>
+<div class="container py-5">
+
+    <!-- Dashboard Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-slate mb-0"><i class="fas fa-tachometer-alt text-fundi-primary me-2"></i> Customer
+                Dashboard</h2>
+            <p class="text-muted mb-0">Manage your job requests and track quotes</p>
+        </div>
+        <a href="{{ url_for('post_job') }}" class="btn btn-fundi-primary">
+            <i class="fas fa-plus-circle me-2"></i> Post New Job
+        </a>
+    </div>
+
+    <div class="row g-4">
+        <!-- LEFT COLUMN: My Job Requests -->
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100 rounded-4">
+                <div class="card-header bg-white border-bottom-0 pt-4 pb-0 px-4">
+                    <h5 class="fw-bold text-slate mb-0">
+                        <i class="fas fa-clipboard-list text-primary me-2"></i> My Job Requests
+                        <span class="badge bg-primary ms-1">{{ my_jobs|length }}</span>
+                    </h5>
+                </div>
+                <div class="card-body p-4" style="max-height: 550px; overflow-y: auto;">
+                    {% if my_jobs %}
+                    {% for job in my_jobs %}
+                    <div class="border-bottom pb-3 mb-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <h6 class="fw-bold text-slate mb-1">{{ job.trade|capitalize }}</h6>
+                            <span class="badge status-{{ job.status }}">{{ job.status|title }}</span>
+                        </div>
+                        <p class="small text-muted mb-1">{{ job.description[:120] }}{% if job.description|length > 120
+                            %}...{% endif %}</p>
+                        <p class="small text-muted mb-1">
+                            <i class="far fa-calendar-alt me-1"></i> {{ job.preferred_date or 'No date set' }}
+                        </p>
+                        <p class="small text-muted mb-1">
+                            <i class="fas fa-map-marker-alt me-1"></i> {{ job.area }}
+                        </p>
+                        {% if job.status == 'open' %}
+                        <a href="{{ url_for('delete_job', job_id=job._id) }}" class="btn btn-danger btn-sm mt-1"
+                            onclick="return confirm('Delete this job?')">
+                            <i class="fas fa-trash"></i> Delete
+                        </a>
+                        {% endif %}
+                        {% if job.status == 'quoted' %}
+                        <span class="badge bg-warning mt-1">📩 Quotes Received</span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="text-center py-4">
+                        <div class="bg-light rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
+                            style="width: 60px; height: 60px;">
+                            <i class="fas fa-inbox text-muted fs-4"></i>
+                        </div>
+                        <p class="text-muted mb-0">No job requests posted</p>
+                        <p class="text-muted small">Click "Post New Job" to get started</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Quotes & Accepted Jobs -->
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-white border-bottom-0 pt-4 pb-0 px-4">
+                    <ul class="nav nav-tabs border-0" id="quoteTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active fw-bold" id="pending-quotes-tab" data-bs-toggle="tab"
+                                data-bs-target="#pending-quotes" type="button" role="tab">
+                                <i class="fas fa-comment-dollar me-2"></i> Quotes
+                                <span class="badge bg-warning ms-1">{{ pending_quotes|length }}</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link fw-bold" id="accepted-jobs-tab" data-bs-toggle="tab"
+                                data-bs-target="#accepted-jobs-customer" type="button" role="tab">
+                                <i class="fas fa-check-circle me-2"></i> Accepted
+                                <span class="badge bg-success ms-1">{{ accepted_jobs|length }}</span>
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body p-4" style="max-height: 550px; overflow-y: auto;">
+                    <div class="tab-content" id="quoteTabsContent">
+                        <!-- TAB 1: Pending Quotes -->
+                        <div class="tab-pane fade show active" id="pending-quotes" role="tabpanel">
+                            {% if pending_quotes %}
+                            {% for quote in pending_quotes %}
+                            <div class="border-bottom pb-3 mb-3">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <h6 class="fw-bold text-slate mb-1">{{ quote.worker_name }}</h6>
+                                    <span class="badge bg-warning">KSh {{ quote.amount }}</span>
+                                </div>
+                                <p class="small text-muted mb-1">⭐ {{ quote.worker_rating }}</p>
+                                <p class="small text-muted mb-2">"{{ quote.message }}"</p>
+                                <div class="d-flex gap-2">
+                                    <a href="{{ url_for('accept_quote', quote_id=quote.id) }}"
+                                        class="btn btn-success btn-sm">
+                                        <i class="fas fa-check"></i> Accept
+                                    </a>
+                                    <a href="{{ url_for('reject_quote', quote_id=quote.id) }}"
+                                        class="btn btn-danger btn-sm">
+                                        <i class="fas fa-times"></i> Reject
+                                    </a>
+                                </div>
+                            </div>
+                            {% endfor %}
+                            {% else %}
+                            <div class="text-center py-4">
+                                <div class="bg-light rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
+                                    style="width: 60px; height: 60px;">
+                                    <i class="fas fa-hourglass-half text-muted fs-4"></i>
+                                </div>
+                                <p class="text-muted mb-0">No pending quotes</p>
+                                <p class="text-muted small">Workers will submit quotes on your jobs</p>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- TAB 2: Accepted Jobs -->
+                        <div class="tab-pane fade" id="accepted-jobs-customer" role="tabpanel">
+                            {% if accepted_jobs %}
+                            {% for item in accepted_jobs %}
+                            <div class="border-bottom pb-3 mb-3">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <h6 class="fw-bold text-slate mb-1">{{ item.worker_name }}</h6>
+                                    <span class="badge bg-success">KSh {{ item.amount }}</span>
+                                </div>
+                                <p class="small text-muted mb-1"><i class="fas fa-map-marker-alt me-1"></i> {{
+                                    item.full_address }}</p>
+                                <p class="small text-muted mb-2"><i class="fas fa-phone me-1"></i> {{ item.worker_phone
+                                    }}</p>
+                                <p>
+                                    <strong>Status:</strong>
+                                    {% if item.payment_status == 'pending_escrow' %}
+                                    <span class="badge bg-warning">⏳ Awaiting Payment</span>
+                                    {% elif item.payment_status == 'paid_escrow' %}
+                                    <span class="badge bg-info">🔒 Payment Held</span>
+                                    {% elif item.payment_status == 'released' %}
+                                    <span class="badge bg-success">✅ Completed</span>
+                                    {% endif %}
+                                </p>
+                                <div class="d-flex gap-2 flex-wrap">
+                                    <a href="https://wa.me/{{ item.worker_phone }}" target="_blank"
+                                        class="btn btn-success btn-sm">
+                                        <i class="fab fa-whatsapp"></i> Chat
+                                    </a>
+                                    {% if item.payment_status == 'pending_escrow' %}
+                                    <span class="text-muted small">(Payment coming in Week 4)</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                            {% else %}
+                            <div class="text-center py-4">
+                                <div class="bg-light rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
+                                    style="width: 60px; height: 60px;">
+                                    <i class="fas fa-check text-muted fs-4"></i>
+                                </div>
+                                <p class="text-muted mb-0">No accepted jobs yet</p>
+                                <p class="text-muted small">Accept a quote to get started</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

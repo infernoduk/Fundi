@@ -103,7 +103,7 @@ def increment_worker_jobs(worker_id):
     )
 
 # -------- JOB HELPERS ---------
-def create_job_request(customer_id, trade, description, location_area, full_address, photo_url=None):
+def create_job_request(customer_id, trade, description, location_area, full_address, photo_url=None, preferred_date=None, budget_min=None, budget_max=None):
     """Create a new job request."""
     job = {
         "customer_id": ObjectId(customer_id),
@@ -112,6 +112,9 @@ def create_job_request(customer_id, trade, description, location_area, full_addr
         "location_area": location_area,
         "full_address": full_address,
         "photo_url": photo_url,
+        "preferred_date": preferred_date,
+        "budget_min": budget_min,
+        "budget_max": budget_max,
         "status": "open", # open, quoted, booked, completed, cancelled
         "created_at": datetime.utcnow()
     }

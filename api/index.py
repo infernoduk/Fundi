@@ -281,10 +281,33 @@ def worker_dashboard():
         return redirect(url_for('index'))
     
     # Get open jobs for this worker's trade
-    open_jobs = find_open_jobs_by_trade(current_user.trade)
+    open_jobs = find_open_jobs_by_trade(worker.get('trade'))
     
     
-    return render_template('worker_dashboard.html', worker=worker)
+    return render_template('worker_dashboard.html', worker=worker, open_jobs=open_jobs)
+
+@app.route('/submit_quote/<job_id>', methods=['POST'])
+@login_required
+def submit_quote(job_id):
+    if current_user.role != 'worker':
+        flash('Only workers can submit quotes')
+        return redirect(url_for('index'))
+    
+    worker = find_worker_by_user_id(current_user.id)
+    if not worker or not worker.get('is_verified'):
+        flash('You must be verified to submit quotes')
+        return redirect(url_for('worker_dashboard'))
+        
+    amount = request.form.get('amount')
+    message = request.form.get('message')
+    
+    if not amount:
+        flash('Amount is required')
+        return redirect(url_for('worker_dashboard'))
+        
+    create_quote(job_id, str(worker['_id']), float(amount), message)
+    flash('Quote submitted successfully!')
+    return redirect(url_for('worker_dashboard'))
 @app.route('/customer/dashboard')
 @login_required
 def customer_dashboard():
@@ -316,6 +339,25 @@ def post_job():
         area = request.form.get('area')
         full_address = request.form.get('full_address')
         
+        preferred_date = request.form.get('preferred_date')
+        budget_min = request.form.get('budget_min')
+        budget_max = request.form.get('budget_max')
+
+        photo_file = request.files.get('photo')
+        photo_url = None
+        if photo_file and photo_file.filename != '':
+            os.makedirs('uploads', exist_ok=True)
+            photo_path = os.path.join('uploads', f'job_{current_user.id}_{uuid.uuid4().hex[:8]}.jpg')
+            photo_file.save(photo_path)
+            try:
+                from cloudinary_uploader import upload_image
+                photo_url = upload_image(photo_path, folder_name=f"fundi/jobs/{current_user.id}")
+            except Exception as e:
+                print(f"Image upload failed: {e}")
+            finally:
+                if os.path.exists(photo_path):
+                    os.remove(photo_path)
+        
         if not all([trade, description, area, full_address]):
             flash('All fields are required.', 'danger')
             return render_template('post_job.html')
@@ -325,7 +367,11 @@ def post_job():
             trade=trade,
             description=description,
             location_area=area,
-            full_address=full_address
+            full_address=full_address,
+            photo_url=photo_url,
+            preferred_date=preferred_date,
+            budget_min=budget_min,
+            budget_max=budget_max
         )
         flash('Job posted successfully!', 'success')
         return redirect(url_for('customer_dashboard'))
