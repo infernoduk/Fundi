@@ -60,7 +60,7 @@ def load_user(user_id):
     if user_data:
         return User(user_data)
     return None
-#Create admin user at startup
+# Create admin user at startup
 with app.app_context():
     admin = mongo.db.users.find_one({"phone": "254700000000"})
     if not admin:
