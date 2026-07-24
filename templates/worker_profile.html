@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="py-4">
+    <!-- Navigation / Back link -->
+    <div class="mb-4">
+        <a href="javascript:history.back()" class="text-decoration-none text-slate-light small fw-bold">
+            <i class="fas fa-arrow-left me-1"></i> Back
+        </a>
+    </div>
+
+    <!-- Worker Profile Hero Card -->
+    <div class="card fundi-card border rounded-4 p-4 shadow-sm bg-white mb-4">
+        <div class="row align-items-center gy-4">
+            <div class="col-md-3 text-center">
+                {% if worker.selfie_url %}
+                <img src="{{ worker.selfie_url }}" alt="{{ worker_user.name if worker_user else 'Worker' }}" class="worker-profile-avatar shadow-sm mb-2">
+                {% else %}
+                <div class="worker-profile-avatar-placeholder mx-auto mb-2 shadow-sm">
+                    <i class="fas fa-user text-secondary fs-1"></i>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="col-md-6">
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                    <span class="fundi-chip">{{ (worker.trade or '')|capitalize }}</span>
+                    {% if worker.is_verified %}
+                    <span class="verified-badge"><i class="fas fa-check-circle"></i> ID Verified</span>
+                    {% endif %}
+                </div>
+
+                <h2 class="fw-bold text-slate mb-1">{{ worker_user.name if worker_user else 'Worker Profile' }}</h2>
+                
+                <p class="text-slate-light small mb-3">
+                    <i class="fas fa-map-marker-alt text-amber me-1"></i> {{ worker.location_area or 'Nairobi' }}
+                </p>
+
+                <div class="d-flex align-items-center gap-3">
+                    <div class="d-flex align-items-center text-amber fw-bold fs-5">
+                        <i class="fas fa-star me-1"></i> {{ worker.rating or 0.0 }}
+                    </div>
+                    <div class="text-slate-light small">
+                        <strong>{{ worker.total_jobs or 0 }}</strong> Jobs Completed
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 d-flex flex-column gap-2 justify-content-center border-top border-md-0 pt-3 pt-md-0 border-outline">
+                <a href="{{ url_for('post_job') }}" class="btn btn-fundi-primary w-100 py-2 shadow-sm d-flex align-items-center justify-content-center gap-2">
+                    <i class="fas fa-plus-circle"></i> Hire &amp; Request Quote
+                </a>
+
+                {% if current_user.is_authenticated and worker_user and worker_user.phone %}
+                <a href="https://wa.me/{{ worker_user.phone }}" target="_blank" class="btn btn-success w-100 py-2 d-flex align-items-center justify-content-center gap-2">
+                    <i class="fab fa-whatsapp fs-5"></i> Chat on WhatsApp
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Reviews Section -->
+    <div class="card fundi-card border rounded-4 p-4 shadow-sm bg-white">
+        <h4 class="fw-bold text-slate mb-4 d-flex align-items-center gap-2">
+            <i class="fas fa-star text-amber"></i> Customer Reviews
+            <span class="badge bg-light text-slate border ms-auto small fs-6">{{ (reviews|default([]))|length }}</span>
+        </h4>
+
+        {% if reviews %}
+        <div class="d-flex flex-column gap-3">
+            {% for review in reviews %}
+            <div class="p-3 bg-light rounded-3 border">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="rounded-circle bg-white d-flex align-items-center justify-content-center text-secondary fw-bold border" style="width: 36px; height: 36px;">
+                            <i class="fas fa-user text-slate-light small"></i>
+                        </div>
+                        <h6 class="fw-bold text-slate mb-0">{{ review.customer_name }}</h6>
+                    </div>
+                    <div class="text-amber fw-bold small">
+                        {% for i in range(1, 6) %}
+                        {% if i <= review.rating %}
+                        <i class="fas fa-star"></i>
+                        {% else %}
+                        <i class="far fa-star"></i>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                <p class="text-slate-light small mb-0">{{ review.comment }}</p>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-4 bg-light rounded-3 p-4">
+            <div class="bg-white rounded-circle d-inline-flex align-items-center justify-content-center mb-2 shadow-sm" style="width: 48px; height: 48px;">
+                <i class="fas fa-comment-slash text-muted"></i>
+            </div>
+            <p class="text-slate-light mb-0 small">No reviews yet for this worker.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

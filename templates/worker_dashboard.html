@@ -101,11 +101,11 @@
                             <div class="border-bottom pb-3 mb-3">
                                 <div class="d-flex justify-content-between align-items-start">
                                     <h6 class="fw-bold text-slate mb-1">{{ job.trade|capitalize }}</h6>
-                                    <span class="badge bg-primary rounded-pill">{{ job.area }}</span>
+                                    <span class="badge bg-primary rounded-pill">{{ job.location_area or job.area }}</span>
                                 </div>
                                 {% if job.photo_url %}
                                 <img src="{{ job.photo_url }}" alt="Job Photo" class="img-fluid rounded mb-2"
-                                    style="max-height: 120px; width: 100%; object-fit: cover;">
+                                    style="max-height: 160px; width: 100%; object-fit: cover;">
                                 {% endif %}
                                 <p class="small text-muted mb-1">
                                     {{ job.description[:150] }}{% if job.description|length > 150 %}...{% endif %}
@@ -119,12 +119,14 @@
                                     <div class="modal-dialog">
                                         <div class="modal-content">
                                             <div class="modal-header">
-                                                <h5 class="modal-title" id="jobModalLabel{{ job._id }}">{{ job.trade|capitalize }} Job in {{ job.area }}</h5>
+                                                <h5 class="modal-title" id="jobModalLabel{{ job._id }}">{{ job.trade|capitalize }} Job in {{ job.location_area or job.area }}</h5>
                                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                             </div>
-                                                <div class="modal-body">
+                                            <div class="modal-body">
                                                 {% if job.photo_url %}
-                                                <img src="{{ job.photo_url }}" alt="Job Photo" class="img-fluid rounded mb-3" style="width: 100%; max-height: 300px; object-fit: cover;">
+                                                <div class="mb-3 text-center">
+                                                    <img src="{{ job.photo_url }}" alt="Job Photo" class="img-fluid rounded shadow-sm" style="width: 100%; max-height: 300px; object-fit: cover;">
+                                                </div>
                                                 {% endif %}
                                                 <h6><strong>Description</strong></h6>
                                                 <p>{{ job.description }}</p>
@@ -140,10 +142,18 @@
                                                     </div>
                                                     <div class="col-6">
                                                         <h6><strong>Budget</strong></h6>
-                                                        {% if job.budget_min and job.budget_max %}
-                                                        <p class="text-muted fw-bold text-success">KSh {{ job.budget_min }} - {{ job.budget_max }}</p>
+                                                        {% if job.budget_min or job.budget_max %}
+                                                            {% if job.budget_min and job.budget_max %}
+                                                            <p class="text-muted fw-bold text-success mb-0">KSh {{ job.budget_min }} - {{ job.budget_max }}</p>
+                                                            {% elif job.budget_min %}
+                                                            <p class="text-muted fw-bold text-success mb-0">KSh {{ job.budget_min }}+</p>
+                                                            {% elif job.budget_max %}
+                                                            <p class="text-muted fw-bold text-success mb-0">Up to KSh {{ job.budget_max }}</p>
+                                                            {% endif %}
+                                                        {% elif job.budget %}
+                                                        <p class="text-muted fw-bold text-success mb-0">KSh {{ job.budget }}</p>
                                                         {% else %}
-                                                        <p class="text-muted">Not specified</p>
+                                                        <p class="text-muted mb-0">Not specified</p>
                                                         {% endif %}
                                                     </div>
                                                 </div>
@@ -156,9 +166,16 @@
                                 </div>
                                 <p class="small text-muted mb-1"><i class="far fa-calendar-alt me-1"></i> {{
                                     job.preferred_date or 'No date specified' }}</p>
-                                {% if job.budget_min and job.budget_max %}
-                                <p class="small text-muted mb-2">Budget: KSh {{ job.budget_min }} - {{ job.budget_max }}
-                                </p>
+                                {% if job.budget_min or job.budget_max %}
+                                    {% if job.budget_min and job.budget_max %}
+                                    <p class="small text-muted mb-2"><i class="fas fa-coins me-1 text-success"></i> Budget: <strong class="text-success">KSh {{ job.budget_min }} - {{ job.budget_max }}</strong></p>
+                                    {% elif job.budget_min %}
+                                    <p class="small text-muted mb-2"><i class="fas fa-coins me-1 text-success"></i> Budget: <strong class="text-success">KSh {{ job.budget_min }}+</strong></p>
+                                    {% elif job.budget_max %}
+                                    <p class="small text-muted mb-2"><i class="fas fa-coins me-1 text-success"></i> Budget: <strong class="text-success">Up to KSh {{ job.budget_max }}</strong></p>
+                                    {% endif %}
+                                {% elif job.budget %}
+                                <p class="small text-muted mb-2"><i class="fas fa-coins me-1 text-success"></i> Budget: <strong class="text-success">KSh {{ job.budget }}</strong></p>
                                 {% endif %}
                                 <form method="POST" action="{{ url_for('submit_quote', job_id=job._id) }}" class="mt-2">
                                     <div class="row g-2">
@@ -198,6 +215,9 @@
                                     <h6 class="fw-bold text-slate mb-1">{{ item.customer_name }}</h6>
                                     <span class="badge bg-success rounded-pill">KSh {{ item.amount }}</span>
                                 </div>
+                                {% if item.photo_url %}
+                                <img src="{{ item.photo_url }}" alt="Job Photo" class="img-fluid rounded mb-2" style="max-height: 140px; width: 100%; object-fit: cover;">
+                                {% endif %}
                                 <p class="small text-muted mb-1"><i class="fas fa-map-marker-alt me-1"></i> {{
                                     item.full_address }}</p>
                                 <p class="small text-muted mb-2"><i class="fas fa-phone me-1"></i> {{

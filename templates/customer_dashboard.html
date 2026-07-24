@@ -1,177 +1,299 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="container py-5">
+
+<div class="py-4">
 
     <!-- Dashboard Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
         <div>
-            <h2 class="fw-bold text-slate mb-0"><i class="fas fa-tachometer-alt text-fundi-primary me-2"></i> Customer
-                Dashboard</h2>
-            <p class="text-muted mb-0">Manage your job requests and track quotes</p>
+            <h1 class="display-6 fw-bold text-slate mb-1">Customer Dashboard</h1>
+            <p class="text-slate-light mb-0">Manage your job requests, review quotes, and track ongoing work.</p>
         </div>
-        <a href="{{ url_for('post_job') }}" class="btn btn-fundi-primary">
-            <i class="fas fa-plus-circle me-2"></i> Post New Job
-        </a>
+        <div>
+            <a href="{{ url_for('post_job') }}" class="btn btn-fundi-primary d-inline-flex align-items-center shadow-sm">
+                <i class="fas fa-plus-circle me-2"></i> Post New Job
+            </a>
+        </div>
     </div>
 
-    <div class="row g-4">
-        <!-- LEFT COLUMN: My Job Requests -->
-        <div class="col-md-6">
-            <div class="card border-0 shadow-sm h-100 rounded-4">
-                <div class="card-header bg-white border-bottom-0 pt-4 pb-0 px-4">
-                    <h5 class="fw-bold text-slate mb-0">
-                        <i class="fas fa-clipboard-list text-primary me-2"></i> My Job Requests
-                        <span class="badge bg-primary ms-1">{{ my_jobs|length }}</span>
-                    </h5>
-                </div>
-                <div class="card-body p-4" style="max-height: 550px; overflow-y: auto;">
-                    {% if my_jobs %}
-                    {% for job in my_jobs %}
-                    <div class="border-bottom pb-3 mb-3">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <h6 class="fw-bold text-slate mb-1">{{ job.trade|capitalize }}</h6>
-                            <span class="badge status-{{ job.status }}">{{ job.status|title }}</span>
+    <!-- Navigation Tabs -->
+    <div class="border-bottom mb-4">
+        <ul class="nav nav-tabs border-0 gap-2 flex-nowrap overflow-auto hide-scrollbar" id="customerDashboardTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active fw-bold px-4 py-3 border-0 bg-transparent text-slate" id="requests-tab" data-bs-toggle="tab" data-bs-target="#content-requests" type="button" role="tab" aria-controls="content-requests" aria-selected="true" style="border-bottom: 3px solid #f59e0b !important; color: #855300 !important;">
+                    <i class="fas fa-clipboard-list me-2"></i> My Job Requests
+                    <span class="badge rounded-pill ms-2" style="background-color: #fef3c7; color: #92400e; border: 1px solid #fde68a;">{{ (my_jobs|default([]))|length }}</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link fw-bold px-4 py-3 border-0 bg-transparent text-slate-light" id="quotes-tab" data-bs-toggle="tab" data-bs-target="#content-quotes" type="button" role="tab" aria-controls="content-quotes" aria-selected="false">
+                    <i class="fas fa-comment-dollar me-2"></i> Quotes &amp; Accepted
+                    <span class="badge rounded-pill ms-2" style="background-color: #ccfbf1; color: #0f766e; border: 1px solid #99f6e4;">{{ (pending_quotes|default([]))|length + (accepted_jobs|default([]))|length }}</span>
+                </button>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Tab Contents -->
+    <div class="tab-content" id="customerDashboardTabsContent">
+
+        <!-- TAB 1: My Job Requests -->
+        <div class="tab-pane fade show active" id="content-requests" role="tabpanel" aria-labelledby="requests-tab">
+            {% if my_jobs %}
+            <div class="d-flex flex-column gap-3">
+                {% for job in my_jobs %}
+                <div class="card fundi-card border rounded-3 p-3 p-md-4 shadow-sm position-relative overflow-hidden">
+                    <!-- Left Color Accent Bar -->
+                    {% set accent_class = 'accent-bar-quoted' if job.status == 'quoted' else ('accent-bar-accepted' if (job.status == 'accepted' or job.status == 'booked') else 'accent-bar-default') %}
+                    <div class="position-absolute top-0 start-0 h-100 accent-bar {{ accent_class }}"></div>
+
+                    <div class="row align-items-start gy-3">
+                        <div class="col-md-9 col-lg-10">
+                            <!-- Badges & Header -->
+                            <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                                <span class="badge rounded-pill px-3 py-1 fw-semibold" style="background-color: #ccfbf1; color: #0f766e;">
+                                    {{ (job.trade or '')|capitalize }}
+                                </span>
+                                <span class="badge status-{{ job.status or 'open' }} px-3 py-1">
+                                    {{ (job.status or 'open')|title }}
+                                </span>
+                                {% if job.status == 'quoted' %}
+                                <span class="badge rounded-pill px-3 py-1" style="background-color: #fef3c7; color: #92400e; border: 1px solid #fde68a;">
+                                    📩 Quotes Received
+                                </span>
+                                {% endif %}
+                            </div>
+
+                            <!-- Job Description & Meta -->
+                            <h5 class="fw-bold text-slate mb-2">{{ (job.trade or '')|capitalize }} Request</h5>
+                            <p class="text-slate-light mb-3" style="font-size: 0.95rem; line-height: 1.5;">
+                                {{ job.description }}
+                            </p>
+
+                            <div class="d-flex flex-wrap align-items-center gap-4 text-slate-light small">
+                                <div class="d-flex align-items-center gap-1">
+                                    <i class="fas fa-map-marker-alt text-amber"></i> {{ job.area or job.location_area or '' }}
+                                </div>
+                                <div class="d-flex align-items-center gap-1">
+                                    <i class="far fa-calendar-alt text-amber"></i> {{ job.preferred_date or 'ASAP / No date set' }}
+                                </div>
+                            </div>
                         </div>
-                        <p class="small text-muted mb-1">{{ job.description[:120] }}{% if job.description|length > 120
-                            %}...{% endif %}</p>
-                        <p class="small text-muted mb-1">
-                            <i class="far fa-calendar-alt me-1"></i> {{ job.preferred_date or 'No date set' }}
-                        </p>
-                        <p class="small text-muted mb-1">
-                            <i class="fas fa-map-marker-alt me-1"></i> {{ job.area }}
-                        </p>
-                        {% if job.status == 'open' %}
-                        <a href="{{ url_for('delete_job', job_id=job._id) }}" class="btn btn-danger btn-sm mt-1"
-                            onclick="return confirm('Delete this job?')">
-                            <i class="fas fa-trash"></i> Delete
-                        </a>
-                        {% endif %}
-                        {% if job.status == 'quoted' %}
-                        <span class="badge bg-warning mt-1">📩 Quotes Received</span>
-                        {% endif %}
-                    </div>
-                    {% endfor %}
-                    {% else %}
-                    <div class="text-center py-4">
-                        <div class="bg-light rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
-                            style="width: 60px; height: 60px;">
-                            <i class="fas fa-inbox text-muted fs-4"></i>
+
+                        <!-- Action Column -->
+                        <div class="col-md-3 col-lg-2 d-flex flex-column align-items-md-end justify-content-center border-top border-md-0 pt-3 pt-md-0 border-outline">
+                            {% if job.status == 'open' %}
+                            <a href="{{ url_for('delete_job_route', job_id=job._id|string) }}" 
+                               class="btn btn-outline-danger btn-sm w-100 rounded-2 py-2 d-flex align-items-center justify-content-center gap-1"
+                               onclick="return confirm('Delete this job?')">
+                                <i class="fas fa-trash-alt"></i> Cancel Request
+                            </a>
+                            {% endif %}
+
+                            {% if job.status == 'quoted' %}
+                            <button class="btn btn-fundi-primary btn-sm w-100 rounded-2 py-2 d-flex align-items-center justify-content-center gap-1"
+                                    onclick="var tab = document.getElementById('quotes-tab'); if(window.bootstrap) { bootstrap.Tab.getOrCreateInstance(tab).show(); } else { tab.click(); }">
+                                View Quotes <i class="fas fa-arrow-right ms-1"></i>
+                            </button>
+                            {% endif %}
                         </div>
-                        <p class="text-muted mb-0">No job requests posted</p>
-                        <p class="text-muted small">Click "Post New Job" to get started</p>
                     </div>
-                    {% endif %}
                 </div>
+                {% endfor %}
             </div>
+            {% else %}
+            <!-- Empty State for Job Requests -->
+            <div class="text-center py-5 bg-white rounded-4 border p-4 shadow-sm">
+                <div class="bg-light rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 64px; height: 64px;">
+                    <i class="fas fa-inbox text-muted fs-3"></i>
+                </div>
+                <h5 class="fw-bold text-slate mb-1">No job requests posted yet</h5>
+                <p class="text-slate-light small mb-3">Post a new job request to get quotes from verified workers nearby.</p>
+                <a href="{{ url_for('post_job') }}" class="btn btn-fundi-primary px-4 py-2 rounded-2">
+                    <i class="fas fa-plus-circle me-1"></i> Post New Job
+                </a>
+            </div>
+            {% endif %}
         </div>
 
-        <!-- RIGHT COLUMN: Quotes & Accepted Jobs -->
-        <div class="col-md-6">
-            <div class="card border-0 shadow-sm rounded-4">
-                <div class="card-header bg-white border-bottom-0 pt-4 pb-0 px-4">
-                    <ul class="nav nav-tabs border-0" id="quoteTabs" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link active fw-bold" id="pending-quotes-tab" data-bs-toggle="tab"
-                                data-bs-target="#pending-quotes" type="button" role="tab">
-                                <i class="fas fa-comment-dollar me-2"></i> Quotes
-                                <span class="badge bg-warning ms-1">{{ pending_quotes|length }}</span>
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link fw-bold" id="accepted-jobs-tab" data-bs-toggle="tab"
-                                data-bs-target="#accepted-jobs-customer" type="button" role="tab">
-                                <i class="fas fa-check-circle me-2"></i> Accepted
-                                <span class="badge bg-success ms-1">{{ accepted_jobs|length }}</span>
-                            </button>
-                        </li>
-                    </ul>
-                </div>
-                <div class="card-body p-4" style="max-height: 550px; overflow-y: auto;">
-                    <div class="tab-content" id="quoteTabsContent">
-                        <!-- TAB 1: Pending Quotes -->
-                        <div class="tab-pane fade show active" id="pending-quotes" role="tabpanel">
-                            {% if pending_quotes %}
-                            {% for quote in pending_quotes %}
-                            <div class="border-bottom pb-3 mb-3">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <h6 class="fw-bold text-slate mb-1">{{ quote.worker_name }}</h6>
-                                    <span class="badge bg-warning">KSh {{ quote.amount }}</span>
-                                </div>
-                                <p class="small text-muted mb-1">⭐ {{ quote.worker_rating }}</p>
-                                <p class="small text-muted mb-2">"{{ quote.message }}"</p>
-                                <div class="d-flex gap-2">
-                                    <a href="{{ url_for('accept_quote', quote_id=quote.id) }}"
-                                        class="btn btn-success btn-sm">
-                                        <i class="fas fa-check"></i> Accept
-                                    </a>
-                                    <a href="{{ url_for('reject_quote', quote_id=quote.id) }}"
-                                        class="btn btn-danger btn-sm">
-                                        <i class="fas fa-times"></i> Reject
-                                    </a>
-                                </div>
-                            </div>
-                            {% endfor %}
-                            {% else %}
-                            <div class="text-center py-4">
-                                <div class="bg-light rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
-                                    style="width: 60px; height: 60px;">
-                                    <i class="fas fa-hourglass-half text-muted fs-4"></i>
-                                </div>
-                                <p class="text-muted mb-0">No pending quotes</p>
-                                <p class="text-muted small">Workers will submit quotes on your jobs</p>
-                            </div>
-                            {% endif %}
-                        </div>
+        <!-- TAB 2: Quotes & Accepted -->
+        <div class="tab-pane fade" id="content-quotes" role="tabpanel" aria-labelledby="quotes-tab">
 
-                        <!-- TAB 2: Accepted Jobs -->
-                        <div class="tab-pane fade" id="accepted-jobs-customer" role="tabpanel">
-                            {% if accepted_jobs %}
-                            {% for item in accepted_jobs %}
-                            <div class="border-bottom pb-3 mb-3">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <h6 class="fw-bold text-slate mb-1">{{ item.worker_name }}</h6>
-                                    <span class="badge bg-success">KSh {{ item.amount }}</span>
+            <!-- SECTION 1: Pending Quotes -->
+            <div class="mb-5">
+                <h5 class="fw-bold text-slate mb-3 d-flex align-items-center gap-2">
+                    <i class="fas fa-hourglass-half text-amber"></i> Pending Quotes
+                    <span class="badge bg-warning text-dark rounded-pill">{{ (pending_quotes|default([]))|length }}</span>
+                </h5>
+
+                {% if pending_quotes %}
+                <div class="row row-cols-1 row-cols-md-2 g-3">
+                    {% for quote in pending_quotes %}
+                    <div class="col">
+                        <div class="card fundi-card border rounded-3 p-3 shadow-sm h-100 bg-white">
+                            <div class="d-flex justify-content-between align-items-start border-bottom pb-3 mb-3">
+                                <div>
+                                    <span class="text-uppercase text-muted fw-bold" style="font-size: 0.75rem;">Worker Quote</span>
+                                    <div class="d-flex align-items-center gap-2 mt-1">
+                                        <div class="rounded-circle bg-light d-flex align-items-center justify-content-center text-secondary fw-bold border" style="width: 42px; height: 42px; font-size: 1.1rem;">
+                                            <i class="fas fa-user text-slate-light"></i>
+                                        </div>
+                                        <div>
+                                            {% if quote.worker_id %}
+                                            <a href="{{ url_for('view_worker_profile', worker_id=quote.worker_id) }}" class="fw-bold text-slate mb-0 text-decoration-none text-primary-hover">
+                                                {{ quote.worker_name }} <i class="fas fa-external-link-alt ms-1 text-muted" style="font-size: 0.75rem;"></i>
+                                            </a>
+                                            {% else %}
+                                            <h6 class="fw-bold text-slate mb-0">{{ quote.worker_name }}</h6>
+                                            {% endif %}
+                                            <div class="small text-amber">
+                                                <i class="fas fa-star"></i> <span class="fw-semibold text-slate-light">{{ quote.worker_rating }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <p class="small text-muted mb-1"><i class="fas fa-map-marker-alt me-1"></i> {{
-                                    item.full_address }}</p>
-                                <p class="small text-muted mb-2"><i class="fas fa-phone me-1"></i> {{ item.worker_phone
-                                    }}</p>
-                                <p>
-                                    <strong>Status:</strong>
-                                    {% if item.payment_status == 'pending_escrow' %}
-                                    <span class="badge bg-warning">⏳ Awaiting Payment</span>
-                                    {% elif item.payment_status == 'paid_escrow' %}
-                                    <span class="badge bg-info">🔒 Payment Held</span>
-                                    {% elif item.payment_status == 'released' %}
-                                    <span class="badge bg-success">✅ Completed</span>
-                                    {% endif %}
-                                </p>
-                                <div class="d-flex gap-2 flex-wrap">
-                                    <a href="https://wa.me/{{ item.worker_phone }}" target="_blank"
-                                        class="btn btn-success btn-sm">
-                                        <i class="fab fa-whatsapp"></i> Chat
-                                    </a>
-                                    {% if item.payment_status == 'pending_escrow' %}
-                                    <span class="text-muted small">(Payment coming in Week 4)</span>
-                                    {% endif %}
+                                <div class="text-end">
+                                    <span class="fs-4 fw-bold text-slate d-block">KSh {{ quote.amount }}</span>
+                                    <span class="badge bg-light text-muted border">Estimated Cost</span>
                                 </div>
                             </div>
-                            {% endfor %}
-                            {% else %}
-                            <div class="text-center py-4">
-                                <div class="bg-light rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
-                                    style="width: 60px; height: 60px;">
-                                    <i class="fas fa-check text-muted fs-4"></i>
-                                </div>
-                                <p class="text-muted mb-0">No accepted jobs yet</p>
-                                <p class="text-muted small">Accept a quote to get started</p>
+
+                            <p class="text-slate-light small mb-3 fst-italic bg-light p-2 rounded-2 border">
+                                "{{ quote.message }}"
+                            </p>
+
+                            <div class="d-flex gap-2 mt-auto">
+                                <a href="{{ url_for('accept_quote', quote_id=quote.id) }}" class="btn btn-fundi-primary flex-fill rounded-2 py-2">
+                                    <i class="fas fa-check me-1"></i> Accept Quote
+                                </a>
+                                <a href="{{ url_for('reject_quote', quote_id=quote.id) }}" class="btn btn-outline-secondary flex-fill rounded-2 py-2">
+                                    <i class="fas fa-times me-1"></i> Reject
+                                </a>
                             </div>
-                            {% endif %}
                         </div>
                     </div>
+                    {% endfor %}
                 </div>
+                {% else %}
+                <div class="text-center py-4 bg-white rounded-3 border p-4 shadow-sm mb-4">
+                    <div class="bg-light rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 48px; height: 48px;">
+                        <i class="fas fa-hourglass-half text-muted"></i>
+                    </div>
+                    <p class="text-slate-light mb-0 small">No pending quotes from workers yet.</p>
+                </div>
+                {% endif %}
             </div>
+
+            <!-- SECTION 2: Accepted & In Progress Jobs -->
+            <div>
+                <h5 class="fw-bold text-slate mb-3 d-flex align-items-center gap-2">
+                    <i class="fas fa-handyman text-secondary"></i> Accepted / In Progress
+                    <span class="badge bg-success rounded-pill">{{ (accepted_jobs|default([]))|length }}</span>
+                </h5>
+
+                {% if accepted_jobs %}
+                <div class="d-flex flex-column gap-3">
+                    {% for item in accepted_jobs %}
+                    <div class="card fundi-card border rounded-3 p-3 p-md-4 shadow-sm position-relative overflow-hidden bg-white" style="border-left: 5px solid #0f766e !important;">
+                        <div class="row align-items-center gy-3">
+                            <div class="col-md-8 col-lg-9">
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    {% if item.payment_status == 'pending_escrow' %}
+                                    <span class="badge bg-warning text-dark px-3 py-1 rounded-pill"><i class="fas fa-clock me-1"></i> Awaiting Payment</span>
+                                    {% elif item.payment_status == 'paid_escrow' %}
+                                    <span class="badge bg-info text-white px-3 py-1 rounded-pill"><i class="fas fa-lock me-1"></i> Payment Held in Escrow</span>
+                                    {% elif item.payment_status == 'released' %}
+                                    <span class="badge bg-success text-white px-3 py-1 rounded-pill"><i class="fas fa-check-circle me-1"></i> Completed</span>
+                                    {% endif %}
+                                </div>
+
+                                <div class="d-flex align-items-center gap-3 my-3">
+                                    <div class="rounded-circle bg-light d-flex align-items-center justify-content-center text-secondary border" style="width: 48px; height: 48px; font-size: 1.2rem;">
+                                        <i class="fas fa-user-cog text-secondary"></i>
+                                    </div>
+                                    <div>
+                                        {% if item.worker_id %}
+                                        <a href="{{ url_for('view_worker_profile', worker_id=item.worker_id) }}" class="fw-bold text-slate mb-0 fs-5 text-decoration-none text-primary-hover">
+                                            {{ item.worker_name }} <i class="fas fa-external-link-alt ms-1 text-muted" style="font-size: 0.8rem;"></i>
+                                        </a>
+                                        {% else %}
+                                        <h5 class="fw-bold text-slate mb-0">{{ item.worker_name }}</h5>
+                                        {% endif %}
+                                        <p class="small text-slate-light mb-0">
+                                            <i class="fas fa-phone me-1 text-secondary"></i> {{ item.worker_phone }}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <p class="small text-slate-light mb-0">
+                                    <i class="fas fa-map-marker-alt me-1 text-amber"></i> <strong>Service Address:</strong> {{ item.full_address }}
+                                </p>
+                            </div>
+
+                            <div class="col-md-4 col-lg-3 d-flex flex-column align-items-md-end justify-content-center border-top border-md-0 pt-3 pt-md-0 border-outline">
+                                <div class="bg-light p-3 rounded-3 text-center w-100 mb-2 border">
+                                    <span class="small text-muted d-block">Agreed Price</span>
+                                    <span class="fs-4 fw-bold text-slate">KSh {{ item.amount }}</span>
+                                </div>
+
+                                {% if item.worker_id %}
+                                <a href="{{ url_for('view_worker_profile', worker_id=item.worker_id) }}" class="btn btn-outline-fundi w-100 rounded-2 py-2 mb-2 d-flex align-items-center justify-content-center gap-2">
+                                    <i class="fas fa-user-circle"></i> View Profile
+                                </a>
+                                {% endif %}
+
+                                <a href="https://wa.me/{{ item.worker_phone }}" target="_blank" class="btn btn-success w-100 rounded-2 py-2 d-flex align-items-center justify-content-center gap-2">
+                                    <i class="fab fa-whatsapp fs-5"></i> Chat on WhatsApp
+                                </a>
+
+                                {% if item.payment_status == 'pending_escrow' %}
+                                <span class="text-muted small mt-1 text-center d-block" style="font-size: 0.75rem;">(Payment coming in Week 4)</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4 bg-white rounded-3 border p-4 shadow-sm">
+                    <div class="bg-light rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2" style="width: 48px; height: 48px;">
+                        <i class="fas fa-check-circle text-muted"></i>
+                    </div>
+                    <p class="text-slate-light mb-0 small">No accepted jobs yet. Accept a quote to get started.</p>
+                </div>
+                {% endif %}
+            </div>
+
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const reqTab = document.getElementById('requests-tab');
+        const quoteTab = document.getElementById('quotes-tab');
+
+        if (reqTab && quoteTab) {
+            reqTab.addEventListener('shown.bs.tab', function () {
+                reqTab.style.borderBottom = '3px solid #f59e0b';
+                reqTab.style.color = '#855300';
+                reqTab.classList.remove('text-slate-light');
+
+                quoteTab.style.borderBottom = 'none';
+                quoteTab.style.color = '#64748b';
+                quoteTab.classList.add('text-slate-light');
+            });
+
+            quoteTab.addEventListener('shown.bs.tab', function () {
+                quoteTab.style.borderBottom = '3px solid #0f766e';
+                quoteTab.style.color = '#006a63';
+                quoteTab.classList.remove('text-slate-light');
+
+                reqTab.style.borderBottom = 'none';
+                reqTab.style.color = '#64748b';
+                reqTab.classList.add('text-slate-light');
+            });
+        }
+    });
+</script>
 {% endblock %}

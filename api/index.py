@@ -4,7 +4,7 @@ import sys
 # Add project root to sys.path to allow imports from models, etc.
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, render_template, request, redirect, url_for, flash, session, send_from_directory
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user, UserMixin
 from flask_pymongo import PyMongo
 from dotenv import load_dotenv
@@ -267,10 +267,19 @@ def dashboard():
         return redirect(url_for('customer_dashboard'))
 # ---------- PLACEHOLDER DASHBOARD ROUTES ----------
 
+@app.route('/uploads/<path:filename>')
+def uploaded_file(filename):
+    """Serve uploaded images locally if not using Cloudinary or during local fallback."""
+    public_uploads = os.path.join(app.root_path, '../public/uploads')
+    if os.path.exists(os.path.join(public_uploads, filename)):
+        return send_from_directory(public_uploads, filename)
+    uploads_dir = os.path.join(app.root_path, '../uploads')
+    return send_from_directory(uploads_dir, filename)
+
 @app.route('/worker/dashboard')
 @login_required
 def worker_dashboard():
-    """Worker dashboard - placeholder"""
+    """Worker dashboard with open and accepted jobs."""
     if current_user.role != 'worker':
         flash('Access denied')
         return redirect(url_for('index'))
@@ -282,9 +291,29 @@ def worker_dashboard():
     
     # Get open jobs for this worker's trade
     open_jobs = find_open_jobs_by_trade(worker.get('trade'))
+    for job in open_jobs:
+        if 'area' not in job:
+            job['area'] = job.get('location_area', '')
     
+    # Get accepted jobs for this worker
+    accepted_jobs = []
+    quotes = list(mongo.db.quotes.find({"worker_id": worker['_id'], "status": "accepted"}))
+    for q in quotes:
+        job = mongo.db.job_requests.find_one({"_id": q['job_request_id']})
+        booking = mongo.db.bookings.find_one({"quote_id": q['_id']})
+        customer = mongo.db.users.find_one({"_id": job['customer_id']}) if job else None
+        accepted_jobs.append({
+            'quote_id': str(q['_id']),
+            'job_id': str(job['_id']) if job else None,
+            'customer_name': customer['name'] if customer else 'Customer',
+            'customer_phone': customer['phone'] if customer else '',
+            'full_address': job.get('full_address', '') if job else '',
+            'amount': q['amount'],
+            'payment_status': booking['payment_status'] if booking else 'pending_escrow',
+            'photo_url': job.get('photo_url') if job else None
+        })
     
-    return render_template('worker_dashboard.html', worker=worker, open_jobs=open_jobs)
+    return render_template('worker_dashboard.html', worker=worker, open_jobs=open_jobs, accepted_jobs=accepted_jobs)
 
 @app.route('/submit_quote/<job_id>', methods=['POST'])
 @login_required
@@ -308,24 +337,151 @@ def submit_quote(job_id):
     create_quote(job_id, str(worker['_id']), float(amount), message)
     flash('Quote submitted successfully!')
     return redirect(url_for('worker_dashboard'))
+
 @app.route('/customer/dashboard')
 @login_required
 def customer_dashboard():
-    """Customer dashboard - placeholder"""
+    """Customer dashboard with posted jobs and quotes."""
     if current_user.role != 'customer':
         flash('Access denied')
         return redirect(url_for('index'))
     
-    return render_template('customer_dashboard.html')
+    my_jobs = find_jobs_by_customer(current_user.id)
+    for job in my_jobs:
+        if 'area' not in job:
+            job['area'] = job.get('location_area', '')
+            
+    job_ids = [j['_id'] for j in my_jobs]
+    
+    # Get pending quotes for customer's jobs
+    pending_quotes = []
+    quotes = list(mongo.db.quotes.find({"job_request_id": {"$in": job_ids}, "status": "pending"}))
+    for q in quotes:
+        w = mongo.db.workers.find_one({"_id": q['worker_id']})
+        w_user = mongo.db.users.find_one({"_id": w['user_id']}) if w else None
+        pending_quotes.append({
+            'id': str(q['_id']),
+            'worker_id': str(w['_id']) if w else '',
+            'worker_name': w_user['name'] if w_user else 'Worker',
+            'worker_rating': w.get('rating', 0.0) if w else 0.0,
+            'amount': q['amount'],
+            'message': q.get('message', '')
+        })
+        
+    # Get accepted jobs for customer
+    accepted_jobs = []
+    acc_quotes = list(mongo.db.quotes.find({"job_request_id": {"$in": job_ids}, "status": "accepted"}))
+    for q in acc_quotes:
+        w = mongo.db.workers.find_one({"_id": q['worker_id']})
+        w_user = mongo.db.users.find_one({"_id": w['user_id']}) if w else None
+        job = mongo.db.job_requests.find_one({"_id": q['job_request_id']})
+        booking = mongo.db.bookings.find_one({"quote_id": q['_id']})
+        accepted_jobs.append({
+            'quote_id': str(q['_id']),
+            'worker_id': str(w['_id']) if w else '',
+            'worker_name': w_user['name'] if w_user else 'Worker',
+            'worker_phone': w_user['phone'] if w_user else '',
+            'full_address': job.get('full_address', '') if job else '',
+            'amount': q['amount'],
+            'payment_status': booking['payment_status'] if booking else 'pending_escrow',
+            'photo_url': job.get('photo_url') if job else None
+        })
+
+    return render_template('customer_dashboard.html', my_jobs=my_jobs, pending_quotes=pending_quotes, accepted_jobs=accepted_jobs)
+
+@app.route('/worker/profile/<worker_id>')
+def view_worker_profile(worker_id):
+    """View detailed worker profile and reviews."""
+    try:
+        worker = find_worker_by_id(worker_id)
+    except Exception:
+        worker = None
+        
+    if not worker:
+        flash('Worker profile not found.', 'danger')
+        return redirect(url_for('index'))
+        
+    worker_user = find_user_by_id(worker['user_id'])
+    reviews = find_reviews_by_worker(worker_id)
+    
+    for r in reviews:
+        c = find_user_by_id(r['customer_id'])
+        r['customer_name'] = c['name'] if c else 'Customer'
+
+    return render_template('worker_profile.html', worker=worker, worker_user=worker_user, reviews=reviews)
+
+@app.route('/accept_quote/<quote_id>')
+@login_required
+def accept_quote(quote_id):
+    if current_user.role != 'customer':
+        flash('Unauthorized')
+        return redirect(url_for('index'))
+    
+    quote = find_quote_by_id(quote_id)
+    if quote:
+        update_quote_status(quote_id, 'accepted')
+        update_job_status(quote['job_request_id'], 'booked')
+        create_booking(quote_id)
+        flash('Quote accepted!')
+    return redirect(url_for('customer_dashboard'))
+
+@app.route('/reject_quote/<quote_id>')
+@login_required
+def reject_quote(quote_id):
+    if current_user.role != 'customer':
+        flash('Unauthorized')
+        return redirect(url_for('index'))
+    
+    quote = find_quote_by_id(quote_id)
+    if quote:
+        update_quote_status(quote_id, 'rejected')
+        flash('Quote rejected.')
+    return redirect(url_for('customer_dashboard'))
+
+@app.route('/delete_job/<job_id>')
+@login_required
+def delete_job_route(job_id):
+    if current_user.role != 'customer':
+        flash('Unauthorized')
+        return redirect(url_for('index'))
+    
+    job = find_job_by_id(job_id)
+    if job and str(job['customer_id']) == current_user.id:
+        delete_job(job_id)
+        flash('Job request deleted.')
+    return redirect(url_for('customer_dashboard'))
+
+@app.route('/mark_job_completed/<quote_id>', methods=['POST'])
+@login_required
+def mark_job_completed(quote_id):
+    if current_user.role != 'worker':
+        flash('Unauthorized')
+        return redirect(url_for('index'))
+    
+    booking = find_booking_by_quote(quote_id)
+    if booking:
+        update_booking_payment(str(booking['_id']), 'released')
+        quote = find_quote_by_id(quote_id)
+        if quote:
+            update_job_status(quote['job_request_id'], 'completed')
+            worker = find_worker_by_user_id(current_user.id)
+            if worker:
+                increment_worker_jobs(str(worker['_id']))
+        flash('Job marked as complete!')
+    return redirect(url_for('worker_dashboard'))
+
 @app.route('/admin/dashboard')
 @login_required
 def admin_dashboard():
-    """Admin dashboard - placeholder"""
+    """Admin dashboard"""
     if not current_user.is_admin():
         flash('Access denied')
         return redirect(url_for('index'))
     
-    return render_template('admin_dashboard.html')
+    stats = get_stats()
+    images = get_all_images()
+    return render_template('admin_dashboard.html', stats=stats, images=images)
+
 @app.route('/post_job', methods=['GET', 'POST'])
 @login_required
 def post_job():
@@ -339,27 +495,32 @@ def post_job():
         area = request.form.get('area')
         full_address = request.form.get('full_address')
         
-        preferred_date = request.form.get('preferred_date')
-        budget_min = request.form.get('budget_min')
-        budget_max = request.form.get('budget_max')
+        preferred_date = request.form.get('preferred_date', '').strip() or None
+        budget_min = request.form.get('budget_min', '').strip() or None
+        budget_max = request.form.get('budget_max', '').strip() or None
 
         photo_file = request.files.get('photo')
         photo_url = None
         if photo_file and photo_file.filename != '':
-            os.makedirs('uploads', exist_ok=True)
-            photo_path = os.path.join('uploads', f'job_{current_user.id}_{uuid.uuid4().hex[:8]}.jpg')
-            photo_file.save(photo_path)
+            uploads_dir = os.path.join(app.root_path, '../public/uploads')
+            os.makedirs(uploads_dir, exist_ok=True)
+            filename = f"job_{current_user.id}_{uuid.uuid4().hex[:8]}.jpg"
+            local_photo_path = os.path.join(uploads_dir, filename)
+            photo_file.save(local_photo_path)
+            
             try:
                 from cloudinary_uploader import upload_image
-                photo_url = upload_image(photo_path, folder_name=f"fundi/jobs/{current_user.id}")
+                uploaded_url = upload_image(local_photo_path, folder_name=f"fundi/jobs/{current_user.id}")
+                if uploaded_url:
+                    photo_url = uploaded_url
+                else:
+                    photo_url = f"/uploads/{filename}"
             except Exception as e:
-                print(f"Image upload failed: {e}")
-            finally:
-                if os.path.exists(photo_path):
-                    os.remove(photo_path)
+                print(f"Cloudinary upload failed: {e}")
+                photo_url = f"/uploads/{filename}"
         
         if not all([trade, description, area, full_address]):
-            flash('All fields are required.', 'danger')
+            flash('All required fields must be filled.', 'danger')
             return render_template('post_job.html')
         
         job_id = create_job_request(
@@ -380,4 +541,5 @@ def post_job():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
     

@@ -191,78 +191,103 @@
 <!-- ============================================== -->
 <!-- PUBLIC / CUSTOMER VIEW                         -->
 <!-- ============================================== -->
-<!-- Hero Section -->
-<div class="row align-items-center py-5 mb-5">
-    <div class="col-lg-6 mb-4 mb-lg-0">
-        <h1 class="display-4 fw-bold text-slate mb-3">Professional Services,<br>Verified by <span
-                class="text-amber">Fundi</span>.</h1>
-        <p class="lead text-slate-light mb-4">The easiest way to hire trusted plumbers, electricians, carpenters, and
-            more in your local area. All workers are identity-verified for your safety.</p>
-
-        <!-- Search Bar Form -->
-        <form action="{{ url_for('index') }}" method="GET" class="mb-4">
-            <div class="input-group input-group-lg shadow-sm rounded-3">
-                <span class="input-group-text bg-white border-end-0 text-secondary"><i class="fas fa-search"></i></span>
-                <input type="text" name="q" class="form-control border-start-0"
-                    placeholder="What service do you need? (e.g. Plumber)" value="{{ search_query or '' }}"
-                    style="box-shadow: none; border-color: #dee2e6;">
-                <button type="submit" class="btn btn-fundi-primary px-4 fw-bold">Search</button>
-            </div>
-        </form>
-
-        <!-- Trust Indicators -->
-        <div class="d-flex align-items-center mt-4 gap-4">
-            <div class="d-flex align-items-center gap-2">
-                <i class="fas fa-shield-alt fs-4" style="color: var(--secondary);"></i>
-                <span class="text-slate fw-bold">ID Verified</span>
-            </div>
-            <div class="d-flex align-items-center gap-2">
-                <i class="fas fa-star fs-4 text-amber"></i>
-                <span class="text-slate fw-bold">Top Rated</span>
-            </div>
-            <div class="d-flex align-items-center gap-2">
-                <i class="fas fa-bolt fs-4 text-warning"></i>
-                <span class="text-slate fw-bold">Fast Booking</span>
-            </div>
-        </div>
+<!-- Hero Banner with Background Image (Modernized) -->
+<div class="fundi-hero-banner mb-5">
+    <!-- Background Image Container with Gradient Overlay -->
+    <div class="fundi-hero-bg-container">
+        <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuDoVPFpGT78XnF7WiT4S4vBNlO1BkjVvlB628c7W1Ch0A-6qxeuqvrpJKDAMgD1r3ClwRmepwTvlWKUst2-l4lQ6T313SSuudyTyT2idvy_GTRFfgftTMlknCZxsCtdwVdZrko0ACge8UOPqWgMDTxwnOAM3_0MplT4cv3ttn9d05CE1HaT0ySNSVPpd7I_mN6m6f7l4udqhVnm-BcjS9TavCRFtN_DnqFaFgcKru3bvGEhRoe5lR0k20wrk5HLdSiIyGJBQKG2WVA" 
+             alt="Modern Home Interior" class="fundi-hero-bg-img">
+        <div class="fundi-hero-overlay"></div>
     </div>
 
-    <div class="col-lg-6 position-relative">
-        <div class="fundi-card border-0 bg-white shadow-lg position-relative z-index-1 mx-auto"
-            style="max-width: 400px; overflow: hidden; z-index: 2;">
-            <div class="bg-light p-4 text-center" style="border-bottom: 4px solid var(--primary);">
-                <div class="rounded-circle bg-white d-inline-flex align-items-center justify-content-center mb-3 shadow-sm"
-                    style="width: 80px; height: 80px;">
-                    <i class="fas fa-tools fs-1" style="color: var(--secondary);"></i>
-                </div>
-                <h4 class="text-slate fw-bold">Instant Connections</h4>
-                <p class="text-slate-light small mb-0">Browse through hundreds of vetted professionals ready to help you
-                    today.</p>
-            </div>
-            <div class="p-3 bg-white">
-                <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
-                    <span class="text-slate fw-bold"><i class="fas fa-wrench text-slate-light me-2"></i> Plumber</span>
-                    <span class="fundi-badge-success"><i class="fas fa-check"></i> Available</span>
-                </div>
-                <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
-                    <span class="text-slate fw-bold"><i class="fas fa-bolt text-slate-light me-2"></i>
-                        Electrician</span>
-                    <span class="fundi-badge-success"><i class="fas fa-check"></i> Available</span>
-                </div>
-                <div class="d-flex justify-content-between align-items-center pb-1">
-                    <span class="text-slate fw-bold"><i class="fas fa-paint-roller text-slate-light me-2"></i>
-                        Painter</span>
-                    <span class="fundi-badge-success"><i class="fas fa-check"></i> Available</span>
-                </div>
-            </div>
-        </div>
+    <!-- Hero Content & Search Bar -->
+    <div class="container fundi-hero-content py-3">
+        <div class="row align-items-center gy-4">
+            <div class="col-lg-7">
+                <h1 class="fundi-hero-title mb-3">
+                    Find a Verified Worker <br>in <span class="text-amber">Minutes</span>
+                </h1>
+                <p class="fundi-hero-subtitle mb-4">
+                    Connect with skilled, trusted local professionals for your home and commercial projects. High-quality tradespeople, ready when you are.
+                </p>
 
-        <!-- Decorative blobs -->
-        <div class="position-absolute rounded-circle"
-            style="width: 300px; height: 300px; background-color: var(--primary); opacity: 0.1; top: -20px; right: 0; z-index: 1; filter: blur(40px);">
-        </div>
-        <div class="position-absolute rounded-circle"
-            style="width: 250px; height: 250px; background-color: var(--secondary); opacity: 0.1; bottom: -30px; left: 20px; z-index: 1; filter: blur(40px);">
+                <!-- Search Bar Form -->
+                <form action="{{ url_for('index') }}" method="GET" class="mb-4">
+                    <div class="input-group input-group-lg shadow-lg rounded-3 overflow-hidden">
+                        <span class="input-group-text bg-white border-0 text-secondary"><i class="fas fa-search"></i></span>
+                        <input type="text" name="q" class="form-control border-0"
+                            placeholder="What service do you need? (e.g. Plumber, Electrician)" value="{{ search_query or '' }}"
+                            style="box-shadow: none;">
+                        <button type="submit" class="btn btn-fundi-primary px-4 fw-bold">Search Workers</button>
+                    </div>
+                </form>
+
+                <!-- Trust Indicators -->
+                <div class="d-flex flex-wrap align-items-center gap-4 text-white">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="fas fa-shield-alt fs-4 text-amber"></i>
+                        <span class="fw-bold">ID Verified</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="fas fa-star fs-4 text-amber"></i>
+                        <span class="fw-bold">Top Rated</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="fas fa-bolt fs-4 text-warning"></i>
+                        <span class="fw-bold">Instant Booking</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4 offset-lg-1">
+                <div class="hero-glass-widget">
+                    <div class="hero-glass-header">
+                        <span class="fw-bold small text-white"><i class="fas fa-bolt text-amber me-1"></i> Active Network</span>
+                        <span class="hero-live-pill">
+                            <span class="pulse-dot"></span> Live
+                        </span>
+                    </div>
+
+                    <div class="d-flex flex-column gap-2 mb-2">
+                        <div class="hero-category-item">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="fas fa-wrench text-amber small"></i>
+                                <span class="fw-semibold small text-white">Plumbing</span>
+                            </div>
+                            <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25 rounded-pill" style="font-size: 0.7rem;"><i class="fas fa-check me-1"></i> Verified</span>
+                        </div>
+
+                        <div class="hero-category-item">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="fas fa-bolt text-amber small"></i>
+                                <span class="fw-semibold small text-white">Electrical</span>
+                            </div>
+                            <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25 rounded-pill" style="font-size: 0.7rem;"><i class="fas fa-check me-1"></i> Verified</span>
+                        </div>
+
+                        <div class="hero-category-item">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="fas fa-hammer text-amber small"></i>
+                                <span class="fw-semibold small text-white">Carpentry</span>
+                            </div>
+                            <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25 rounded-pill" style="font-size: 0.7rem;"><i class="fas fa-check me-1"></i> Verified</span>
+                        </div>
+
+                        <div class="hero-category-item">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="fas fa-paint-roller text-amber small"></i>
+                                <span class="fw-semibold small text-white">Painting</span>
+                            </div>
+                            <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25 rounded-pill" style="font-size: 0.7rem;"><i class="fas fa-check me-1"></i> Verified</span>
+                        </div>
+                    </div>
+
+                    <div class="hero-stats-footer">
+                        <span class="d-flex align-items-center gap-1"><i class="fas fa-shield-alt text-amber"></i> 100% Vetted</span>
+                        <span class="d-flex align-items-center gap-1 text-amber"><i class="fas fa-star"></i> 4.9 Rating</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -323,8 +348,9 @@
                         </div>
                     </div>
 
-                    <a href="{{ url_for('login') }}" class="btn btn-fundi-primary w-100 mt-4 py-2"><i
-                            class="fas fa-envelope me-2"></i> Contact Worker</a>
+                    <a href="{{ url_for('view_worker_profile', worker_id=worker._id) }}" class="btn btn-fundi-primary w-100 mt-4 py-2">
+                        <i class="fas fa-user-circle me-2"></i> View Profile
+                    </a>
                 </div>
             </div>
         </div>

@@ -1,4 +1,7 @@
 #Environment variables
 .env
-#Virtual environment
+# Virtual environment
 venv/
+
+# Agents directory
+.agents/
